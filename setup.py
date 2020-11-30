@@ -20,7 +20,7 @@ setup(
         "Programming Language :: Python :: 3",
         "Operating System :: Linux",
     ],
-    packages=find_packages(exclude=("tests",)),
+    packages=find_packages(exclude=("tests", "config")),
     include_package_data=True,
     install_requires=[],
     python_requires='>=3.7',
