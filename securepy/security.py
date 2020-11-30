@@ -66,7 +66,7 @@ for name in SAFE_GLOBAL_SCOPE:
     SAFE_BUILTINS[name] = getattr(builtins, name)
 
 RESTRICTED_BUILTINS = {}
-for builtin, reference in vars(builtins):
+for builtin, reference in vars(builtins).items():
     if builtin not in UNSAFE_GLOBAL_SCOPE:
         RESTRICTED_BUILTINS[builtin] = reference
 
