@@ -1,5 +1,6 @@
 import config.config as _conf
-from securepy.sandbox import Sandbox  # noqa
+from securepy.restricted import Restricted  # noqa
+from securepy.security import RESTRICTED_GLOBALS, SAFE_GLOBALS, UNRESTRICTED_GLOBALS  # noqa
 
 __title__ = _conf.NAME
 __author__ = _conf.AUTHOR
