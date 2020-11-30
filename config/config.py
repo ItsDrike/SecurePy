@@ -1,6 +1,6 @@
 # Package information
 NAME = "securepy"
-VERSION = "v0.0.1 - alpha"
+VERSION = "0.0.1_alpha"
 AUTHOR = "ItsDrike"
 AUTHOR_MAIL = "itsdrikeofficial@gmail.com"
 DESCRIPTION = "Secure unknown python code execution"
