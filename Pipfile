@@ -1,0 +1,24 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+autopep8 = "*"
+flake8 = "*"
+flake8-bugbear = "*"
+flake8-import-order = "*"
+ipython = "*"
+pre-commit = "*"
+twine = "*"
+
+[packages]
+
+[requires]
+python_version = "3.8"
+
+[scripts]
+build="python setup.py sdist bdist_wheel"
+build-check="twine check dist/*"
+publish-test="twine upload --repository-url https://test.pypi.org/legacy/ dis"
+publish="twine upload dist/*"
