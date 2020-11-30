@@ -1,4 +1,11 @@
 import builtins
+import typing as t
+
+
+class ProtectionBreach(RuntimeError):
+    def __init__(self, message: str, *args, **kwargs):
+        message += " (SecurePy execution protection)"
+        super().__init__(message, *args, **kwargs)
 
 
 SAFE_TYPES = [
@@ -6,9 +13,9 @@ SAFE_TYPES = [
     "bool", "tuple", "list",
     "dict", "set", "bytes",
 
-    "range", "type", "enumerate",
-    "slice", "super", "classmethod",
-    "staticmethod"
+    "type", "object", "super",
+    "classmethod", "staticmethod",
+    "enumerate", "slice", "range"
 ]
 
 SAFE_FUNCTIONS = [
@@ -17,7 +24,7 @@ SAFE_FUNCTIONS = [
     "isinstance", "issubclass",
     "len", "hex", "oct", "chr", "ord",
     "sorted", "repr", "pow", "abs",
-    "round", "iter", "getattr", "hasattr",
+    "round", "iter", "hasattr",
     "sum", "max", "min", "all", "any",
     "map", "help"
 ]
@@ -61,9 +68,22 @@ UNSAFE_GLOBAL_SCOPE = [
 ]
 
 
+def secure_getattr(object: t.Any, name: str, default=None) -> t.Any:
+    if name.startswith("_"):
+        raise ProtectionBreach("Sorry, `name` can't start with `_`")
+    return getattr(object, name, default)
+
+
+OVERRIDDEN_VALUES = {
+    "getattr": secure_getattr
+}
+
+
 SAFE_BUILTINS = {}
 for name in SAFE_GLOBAL_SCOPE:
     SAFE_BUILTINS[name] = getattr(builtins, name)
+for name, reference in OVERRIDDEN_VALUES.items():
+    SAFE_BUILTINS[name] = reference
 
 RESTRICTED_BUILTINS = {}
 for builtin, reference in vars(builtins).items():
