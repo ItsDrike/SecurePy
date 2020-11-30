@@ -45,14 +45,7 @@ SAFE_DUNDERS = [
 
 SAFE_GLOBAL_SCOPE = SAFE_TYPES + SAFE_FUNCTIONS + SAFE_EXCEPTIONS + SAFE_DUNDERS
 
-
-SAFE_BUILTINS = {}
-for name in SAFE_GLOBAL_SCOPE:
-    SAFE_BUILTINS[name] = getattr(builtins, name)
-
-SAFE_GLOBALS = {"__builtins__": SAFE_BUILTINS}
-
-UNSAFE_BUILTINS = [
+UNSAFE_GLOBAL_SCOPE = [
     "dir",  # General purpose introspector
     "compile",  # don't allow producing new code
     # Unsafe access to namespace
@@ -66,3 +59,19 @@ UNSAFE_BUILTINS = [
     "open",
     "file",
 ]
+
+
+SAFE_BUILTINS = {}
+for name in SAFE_GLOBAL_SCOPE:
+    SAFE_BUILTINS[name] = getattr(builtins, name)
+
+RESTRICTED_BUILTINS = {}
+for builtin, reference in vars(builtins):
+    if builtin not in UNSAFE_GLOBAL_SCOPE:
+        RESTRICTED_BUILTINS[builtin] = reference
+
+UNRESTRICTED_BUILTINS = vars(builtins)
+
+SAFE_GLOBALS = {"__builtins__": SAFE_BUILTINS}
+RESTRICTED_GLOBALS = {"__builtins__": RESTRICTED_BUILTINS}
+UNRESTRICTED_GLOBALS = {"__builtins__": UNRESTRICTED_BUILTINS}
