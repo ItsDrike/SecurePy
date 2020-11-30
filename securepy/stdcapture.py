@@ -1,3 +1,4 @@
+import subprocess
 import sys
 import typing as t
 from io import StringIO
@@ -62,3 +63,36 @@ class StdCapture:
     def _reset(self) -> None:
         self._stdout = None
         self._stderr = None
+
+
+def read_process_std(
+    process: subprocess.Popen,
+    read_chunk_size: int,
+    max_size: int,
+) -> t.Tuple[str, str]:
+    """
+    Start reading from STDOUT and STDERR, stop in case stdout limit is reached or process stops.
+
+    In case output from STDOUT will reach the max limit, the subprocess will be terminated by SIGKILL.
+    """
+    output_size = 0
+    stdout = []
+    stderr = []
+
+    while process.poll() is None:
+        chars = process.stdout.read(read_chunk_size)
+        output_size += sys.getsizeof(chars)
+        stdout.append(chars)
+
+        chars = process.stderr.read(read_chunk_size)
+        output_size += sys.getsizeof(chars)
+        stderr.append(chars)
+
+        if output_size > max_size:
+            print("Output exceeded stdout limit, terminating NsJail with SIGKILL")
+            process.kill()
+            break
+
+    # Wait for process termination
+    process.wait()
+    return "".join(stdout), "".join(stderr)
