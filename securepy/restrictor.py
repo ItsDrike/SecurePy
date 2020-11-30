@@ -1,6 +1,9 @@
+import traceback
 import typing as t
 
+
 from securepy.security import RESTRICTED_GLOBALS, SAFE_GLOBALS, UNRESTRICTED_GLOBALS
+from securepy.stdcapture import StdCapture
 
 
 class Restrictor:
@@ -28,5 +31,18 @@ class Restrictor:
         else:
             raise TypeError("`restriction_scope` must be a literal value: 0, 1, 2 or 3.")
 
+        self.stdcapture = StdCapture()
+
     def execute(self, code: str) -> t.Any:
-        return exec(code, self.globals)
+        stdout = ""
+        stderr = ""
+
+        with self.stdcapture:
+            try:
+                exec(code, self.globals)
+            except BaseException:
+                stderr = traceback.format_exc()
+
+        stdout = self.stdcapture.stdout
+
+        return stdout, stderr
