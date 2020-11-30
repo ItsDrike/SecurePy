@@ -3,7 +3,7 @@ import typing as t
 from securepy.security import RESTRICTED_GLOBALS, SAFE_GLOBALS, UNRESTRICTED_GLOBALS
 
 
-class Restricted:
+class Restrictor:
     """
     Prepare isolated python exec session
     """
