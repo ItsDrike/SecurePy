@@ -18,6 +18,7 @@ twine = "*"
 python_version = "3.8"
 
 [scripts]
+precommit = "pre-commit install"
 lint = "pre-commit run --all-files"
 build="python setup.py sdist bdist_wheel"
 build-check="twine check dist/*"
