@@ -9,8 +9,10 @@ This project is highly work in progress and it's currently in very early stages.
 SecurePy has 2 ways of restricting your executions:
 - securepy.Restrictor
 - securepy.Sandbox
-`Sandbox` is only aviable for Linux devices and currently requires privillage escallation (must be run as root). It uses [`nsjail`](https://github.com/google/nsjail) to create an isolated environment for the python script to run. This is a much safer way to run your code, but it's currently unfinished and it can't be used in production.
-`Restrictor` is a way to execute python code directly, without any additional dependencies. It's approach is to remove as many potentionally harmful builtin classes and functions as it can so that the given code will run without any problems.
+
+**`Sandbox`** only aviable for Linux devices and currently requires privillage escallation (must be run as root). It uses [`nsjail`](https://github.com/google/nsjail) to create an isolated environment for the python script to run. This is a much safer way to run your code, but it's currently unfinished and it can't be used in production.
+
+**`Restrictor`** is a way to execute python code directly, without any additional dependencies. It's approach is to remove as many potentionally harmful builtin classes and functions as it can so that the given code will run without any problems.
 
 ## Critical note
 
