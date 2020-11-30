@@ -18,9 +18,14 @@ setup(
     license=config.LICENCE,
     url="https://github.com/ItsDrike/SecurePy",
     classifiers=[
+        "Development Status :: 3 - Alpha",
         "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python :: 3",
-        "Operating System :: OS Independent",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Operating System :: POSIX",
+        "Topic :: SYSTEM"
     ],
     packages=find_packages(exclude=("tests", "config")),
     include_package_data=True,
