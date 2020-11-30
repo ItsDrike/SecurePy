@@ -1,5 +1,7 @@
 from pathlib import Path
-from setuptools import setup, find_packages
+
+from setuptools import find_packages, setup
+
 from config import config
 
 DIR = Path(__file__).parent
@@ -16,7 +18,7 @@ setup(
     license=config.LICENCE,
     url="https://github.com/ItsDrike/SecurePy",
     classifiers=[
-        f"License :: OSI Approved :: Apache Software License",
+        "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ],
@@ -25,4 +27,3 @@ setup(
     install_requires=[],
     python_requires='>=3.7',
 )
-
