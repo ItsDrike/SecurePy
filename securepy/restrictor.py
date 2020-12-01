@@ -33,15 +33,21 @@ class Restrictor:
 
         self.stdcapture = StdCapture()
 
-    def execute(self, code: str) -> t.Any:
-        stdout = ""
-        stderr = ""
+    def execute(self, code: str) -> t.Tuple[t.Optional[str], t.Optional[t.Tuple[str, BaseException]]]:
+        """
+        Securely execute given `code` based on chosen globals (in __init__).
+
+        Return: (`stdout`, (`traceback (stderr)`, `raised exception`))
+        Note that both `stdout` or the error tuple will be `None` if there's
+        no standard output/no exception occurred.
+        """
+        stderr = None
 
         with self.stdcapture:
             try:
                 exec(code, self.globals)
-            except BaseException:
-                stderr = traceback.format_exc()
+            except BaseException as exc:
+                stderr = (traceback.format_exc(), exc)
 
         stdout = self.stdcapture.stdout
 
