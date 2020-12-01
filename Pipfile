@@ -11,6 +11,7 @@ flake8-import-order = "*"
 ipython = "*"
 pre-commit = "*"
 twine = "*"
+"keyrings.alt" = "*"
 
 [packages]
 
