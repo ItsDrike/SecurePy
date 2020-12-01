@@ -2,8 +2,6 @@
 
 SecurePy is a project which aims to allow very secure unknown python code execution without worries.
 
-This project is highly work in progress and it's currently in very early stages.
-
 ## Functionality
 
 SecurePy has 2 ways of restricting your executions:
@@ -13,7 +11,9 @@ SecurePy has 2 ways of restricting your executions:
 
 ## Critical note
 
-Using this library isn't recommended as it's currently in highly work in progress stage, even though it does provide some level of protection against unknown scripts, it's certainly not perfect and it shouldn't be used in production under no circumstances.
+Even though this library is able to safely execute most unknown python source codes, you should still be very careful with granting someone access to random code execution as it is hard to cover everything.
+
+You should also take note that this library is still relatively new and the development is still in progress, although the basic implementation is working and is relatively secure.
 
 ## Usage
 
@@ -25,7 +25,7 @@ In order to use this library, you must first download it from PyPi: `pip install
 import securepy
 
 restrictor = securepy.Restrictor(restriction_scope=2)
-stdout, stderr = restrictor.execute("""
+stdout, exc = restrictor.execute("""
 [your python code here]
 """)
 ```
@@ -37,7 +37,7 @@ stdout, stderr = restrictor.execute("""
 - **2** (RECOMMENDED): Secure globals (only using relatively safe globals)
 - **3**: No globals (very limiting but quite safe)
 
-`stdout` and `stderr` variables will hold the outputs from your code. `stderr` will hold the traceback if there is some (otherwise it will be `None`). `stderr` will hold the simple standard output (print output).
+`stdout` and `exc` variables will hold the outputs from your code. `exc` will hold the exception if there is some (otherwise it will be `None`). `stdout` will hold the simple standard output (print output).
 
 ### Sandbox (NsJail)
 
