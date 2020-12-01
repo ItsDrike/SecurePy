@@ -1,6 +1,7 @@
 import securepy.config.config as _conf
 from securepy.restrictor import Restrictor  # noqa
 from securepy.security import RESTRICTED_GLOBALS, SAFE_GLOBALS, UNRESTRICTED_GLOBALS  # noqa
+from securepy.timer import TimeLimiter  # noqa
 
 __title__ = _conf.NAME
 __author__ = _conf.AUTHOR
