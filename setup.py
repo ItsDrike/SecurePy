@@ -2,7 +2,7 @@ from pathlib import Path
 
 from setuptools import find_packages, setup
 
-from config import config
+from securepy.config import config
 
 DIR = Path(__file__).parent
 README = (DIR / "README.md").read_text()
@@ -25,7 +25,7 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Operating System :: POSIX",
-        "Topic :: SYSTEM"
+        "Topic :: System"
     ],
     packages=find_packages(exclude=("tests", "config")),
     include_package_data=True,
