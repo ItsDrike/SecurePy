@@ -2,7 +2,7 @@ import typing as t
 
 from securepy.security import RESTRICTED_GLOBALS, SAFE_GLOBALS, UNRESTRICTED_GLOBALS
 from securepy.stdcapture import StdCapture
-from securepy.timer import TimeLimiter
+from securepy.timer import timed_run
 
 
 class Restrictor:
@@ -26,7 +26,6 @@ class Restrictor:
         self._set_global_scope(self.restriction_scope)
 
         self.stdcapture = StdCapture()
-        self.time_limiter = TimeLimiter(max_exec_time)
 
     def _set_global_scope(self, restriction_scope: t.Literal[0, 1, 2, 3]):
         """
@@ -57,11 +56,13 @@ class Restrictor:
 
         Return: (`stdout`, `raised exception`)
         """
+        wrapped = timed_run(self.max_exec_time, lambda: exec(code, self.globals))
+
         exception = None
 
         with self.stdcapture:
             try:
-                self.time_limiter(exec(code, self.globals))
+                wrapped()
             except BaseException as exc:
                 exception = exc
 
