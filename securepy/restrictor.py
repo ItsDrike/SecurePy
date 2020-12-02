@@ -56,7 +56,7 @@ class Restrictor:
 
         Return: (`stdout`, `raised exception`)
         """
-        wrapped = timed_run(self.max_exec_time, lambda: exec(code, self.globals))
+        wrapped = timed_run(self.max_exec_time, exec, args=(code, self.globals))
 
         exception = None
 
