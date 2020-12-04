@@ -19,8 +19,8 @@ SAFE_TYPES = [
 ]
 
 SAFE_FUNCTIONS = [
-    "print", "callable", "next",
-    "zip", "divmod", "hash", "id",
+    "print", "callable", "next", "zip",
+    "divmod", "hash", "id",
     "isinstance", "issubclass",
     "len", "hex", "oct", "chr", "ord",
     "sorted", "repr", "pow", "abs",
@@ -75,7 +75,7 @@ def secure_getattr(object: t.Any, name: str, default=None) -> t.Any:
 
 
 OVERRIDDEN_VALUES = {
-    "getattr": secure_getattr
+    "getattr": secure_getattr,
 }
 
 
@@ -91,6 +91,7 @@ for builtin, reference in vars(builtins).items():
         RESTRICTED_BUILTINS[builtin] = reference
 
 UNRESTRICTED_BUILTINS = vars(builtins)
+
 
 SAFE_GLOBALS = {"__builtins__": SAFE_BUILTINS}
 RESTRICTED_GLOBALS = {"__builtins__": RESTRICTED_BUILTINS}
