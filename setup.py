@@ -2,7 +2,7 @@ from pathlib import Path
 
 from setuptools import find_packages, setup
 
-from securepy.config import config
+from securepy import config
 
 DIR = Path(__file__).parent
 README = (DIR / "README.md").read_text()
