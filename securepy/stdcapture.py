@@ -147,7 +147,7 @@ class StdCapture:
         self.capturing_stderr = StringIO()
 
     def __repr__(self) -> str:
-        return f"<Restrictor(stdout={self.stdout}, stderr={self.stderr})"
+        return f"<StdCapture(stdout={self.stdout}, stderr={self.stderr})"
 
 
 def read_process_std(
