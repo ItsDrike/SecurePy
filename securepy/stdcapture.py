@@ -1,8 +1,8 @@
 import subprocess
 import sys
 import typing as t
-from io import StringIO
 from functools import wraps
+from io import StringIO
 
 
 class StdCapture:
