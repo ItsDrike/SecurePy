@@ -46,31 +46,45 @@ class TimedFunction:
     def __init__(self, time_limit: int):
         self.time_limit = time_limit
 
-    def _capture_return(self, func: t.Callable) -> t.Callable:
+    def _capture_wrapper(self, func: t.Callable) -> t.Callable:
         """
         Decorate given function and capture it's return value,
         in case an exception happens during it's execution,
         capture it too, after that, send the captured values
         via multiprocessing pipe to the main (parent) process.
 
+        This is only the bare decorator, the actual functionality
+        is defined in `_capture_return` from which the function
+        will be ran.
+        """
+        @wraps(func)
+        def inner(*args, **kwargs) -> None:
+            send_value = self._capture_return(func, *args, **kwargs)
+            self.parent.send(send_value)
+        return inner
+
+    def _capture_return(self, func: t.Callable, *args, **kwargs) -> t.Tuple[t.Literal["exc", "ret"], t.Any]:
+        """
+        Capture return value of given `func`, in case an exception
+        happens during it's execution, capture it too, after that,
+        send the captured values via multiprocessing pipe to the
+        main (parent) process.
+
         Send values:
             - If exception was raised: tuple: ("exc", exception)
             - Otherwise: tuple: ("ret", return_value)
-        The reason behind sending a header "ret"/"exc" is
+        The reason behind sending a header "ret"/"exc" is to differentiate
+        between exceptions and return values (it's possible to return exception).
 
         NOTICE: You might want to subclass and override this method
         in case you want to return some additional information about
         your function.
         """
-        @wraps(func)
-        def inner(*args, **kwargs) -> None:
-            try:
-                ret = func(*args, **kwargs)
-            except BaseException as exc:
-                self.parent.send(("exc", exc))
-                return
-            self.parent.send(("ret", ret))
-        return inner
+        try:
+            ret = func(*args, **kwargs)
+        except BaseException as exc:
+            return ("exc", exc)
+        return ("ret", ret)
 
     def _value_return(self, ret_info: t.Tuple[t.Literal["exc", "ret"], t.Any], func: t.Callable) -> t.Any:
         """
@@ -97,8 +111,10 @@ class TimedFunction:
         if ret_info[0] == "ret":
             return ret_info[1]
         elif ret_info[0] == "exc":
+            inner_exc = ret_info[1]
             raise TimedFunctionError(
-                f"Error occurred while executing timed function `{func.__name__}`, ended with `{type(ret_info[1])}`.",
+                f"Error occurred while executing timed function `{func.__name__}`, "
+                f"ended with `{inner_exc.__class__.__name__}: {inner_exc}`.",
                 inner_exception=ret_info[1]
             )
 
@@ -140,7 +156,12 @@ class TimedFunction:
         which will either get called once the time limit expires, or once the given
         function ends.
         """
-        capturing = self._capture_return(func)
+        if args is None:
+            args = tuple()
+        if kwargs is None:
+            kwargs = dict()
+
+        capturing = self._capture_wrapper(func)
         self.child, self.parent = multiprocessing.Pipe()
         proc = multiprocessing.Process(target=capturing, args=args, kwargs=kwargs)
         proc.start()
