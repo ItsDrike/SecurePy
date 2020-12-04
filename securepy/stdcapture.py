@@ -115,11 +115,16 @@ class StdCapture:
         This acts as a wrapper for given `func`, it immediately runs it,
         (if you want to decorate, call instance directly - `__call__`)
         """
+        if args is None:
+            args = tuple()
+        if kwargs is None:
+            kwargs = dict()
+
         if self.auto_reset:
             self.reset()
 
         with self:
-            return func()
+            return func(*args, **kwargs)
 
     def override_std(self) -> None:
         """
