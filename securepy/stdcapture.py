@@ -5,64 +5,90 @@ from io import StringIO
 
 
 class StdCapture:
-    def __init__(self):
-        self._stdout = None
-        self._stderr = None
+    def __init__(self, auto_reset: bool = True):
+        self.auto_reset = auto_reset
+
+        self.capturing_stdout = StringIO()
+        self.capturing_stderr = StringIO()
+
+        self.old_stdout = sys.stdout
+        self.old_stderr = sys.stderr
 
     @property
-    def stdout(self) -> t.Optional[str]:
-        if self._stdout is not None:
-            return self._stdout.getvalue()
+    def stdout(self) -> str:
+        """
+        Return captured STDOUT in form of string. This will
+        return empty string in case no STDOUT was captured.
+        """
+        return self.capturing_stdout.getvalue()
 
     @property
-    def stderr(self) -> t.Optional[str]:
-        if self._stderr is not None:
-            return self._stderr.getvalue()
+    def stderr(self) -> str:
+        """
+        Return captured STDERR in form of string. This will
+        return empty string in case no STDERR was captured.
+        """
+        return self.capturing_stderr.getvalue()
 
     def __enter__(self) -> None:
         """
         Temporarely override `sys.stdout` and `sys.stderr`
-        use `StringIO` to capture standard output & error.
+        to use `StringIO` to capture standard output & error.
 
-        Save the original `sys.stdout` & `sys.stderr` into
-        variables: `self.old_stdout` & `self.old_stderr`.
+        Captured STDOUT/STDERR can be obtained by accessing
+        `StdCapture.stdout`/`StdCapture.stderr`.
         """
-        self._reset()
+        if self.auto_reset:
+            self.reset()
 
-        self.old_stdout = sys.stdout
-        if self._stdout is None:
-            self._stdout = StringIO()
-        sys.stdout = self._stdout
-
-        self.old_stderr = sys.stderr
-        if self._stderr is None:
-            self._stderr = StringIO()
-        sys.stderr = self._stderr
+        self.override_std()
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         """
-        Restore the original functionality of `sys.stdout`
-        and `sys.stderr`.
+        Restore the normal printing STDOUT/STDERR capabilities.
         """
-        sys.stdout = self.old_stdout
-        sys.stderr = self.old_stderr
+        self.restore_std()
 
     def __call__(self, func: t.Callable) -> t.Tuple[t.Optional[str], t.Optional[str], t.Any]:
         """
-        Call a provided `func` function while capturing it's
-        stdout, stderr and return value.
-
-        Once the function ends, return a tuple of `(stdout, stderr, func_return)`
+        Call a provided `func` function while capturing it's stdout.
+        This will return the original function's return value.
+        STDOUT & STDERR will be captured and can be obtained by doing
+        `StdCapture.stdout`/`StdCapture.stderr`.
         """
-        self._reset()
+        if self.auto_reset:
+            self.reset()
+
         with self:
-            out = func()
+            return func()
 
-        return self.stdout, self.stderr, out
+    def override_std(self) -> None:
+        """
+        Override `sys.stdout` and `sys.stderr` to use
+        `StringIO` instead to capture standard output & error.
+        """
+        if not isinstance(sys.stdout, StringIO):
+            sys.stdout = self.capturing_stdout
+        if not isinstance(sys.stderr, StringIO):
+            sys.stderr = self.capturing_stderr
 
-    def _reset(self) -> None:
-        self._stdout = None
-        self._stderr = None
+    def restore_std(self) -> None:
+        """
+        Revert override of `sys.stdout` and `sys.stderr`
+        to restore normal printing capabilities without capturing.
+        """
+        if isinstance(sys.stdout, StringIO):
+            sys.stdout = self.old_stdout
+        if isinstance(sys.stderr, StringIO):
+            sys.stderr = self.old_stderr
+
+    def reset(self) -> None:
+        """Reset stored captured stdout & stderr strings."""
+        self.capturing_stdout = StringIO()
+        self.capturing_stderr = StringIO()
+
+    def __repr__(self) -> str:
+        return f"<Restrictor(stdout={self.stdout}, stderr={self.stderr})"
 
 
 def read_process_std(
