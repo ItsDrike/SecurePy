@@ -2,9 +2,47 @@ import subprocess
 import sys
 import typing as t
 from io import StringIO
+from functools import wraps
 
 
 class StdCapture:
+    """
+    This class is used to capture STDOUT & STDERR of given
+    function, it can work as a wrapper, decorator or context manager.
+
+    Context Manager:
+        captured_std = StdCapture()
+        with captured_std:
+            print("hello")
+
+        captured_std.stdout  # <-- will contain the captured STDOUT (str)
+
+    Wrapper:
+        def foo(*args, **kwargs):
+            print("hello")
+
+        captured_std = StdCapture()
+        captured_std.capture(foo, args=None, kwargs=None)
+
+        captured_std.stdout  # <-- will contain the captured STDOUT (str)
+
+    Decorator:
+        captured_std = StdCapture()
+
+        @captured_std
+        def foo(*args, **kwargs):
+            print("hello")
+
+        foo(*args, **kwargs)
+
+        captured_std.stdout  # <-- will contain the captured STDOUT (str)
+
+    You can also use captured_std.stderr to obtain captured STDERR.
+
+    If you don't want to lose STDOUT/STDERR captured values after function is done running,
+    you can specify `auto_reset=False` on init and run `StdCapture.reset` manually when needed
+    """
+
     def __init__(self, auto_reset: bool = True):
         self.auto_reset = auto_reset
 
@@ -49,12 +87,33 @@ class StdCapture:
         """
         self.restore_std()
 
-    def __call__(self, func: t.Callable) -> t.Tuple[t.Optional[str], t.Optional[str], t.Any]:
+    def __call__(self, func: t.Callable) -> t.Any:
         """
-        Call a provided `func` function while capturing it's stdout.
-        This will return the original function's return value.
+        This decorates given `func` and captures it's STDOUT/STDERR
+        when it's run.
+        Return value will be the original return from `func`.
+
         STDOUT & STDERR will be captured and can be obtained by doing
         `StdCapture.stdout`/`StdCapture.stderr`.
+
+        The functionality is handeled in `StdCapture.capture`, this method
+        serves only as a decorator for given `func`.
+        """
+        @wraps(func)
+        def inner(*args, **kwargs) -> t.Any:
+            return self.capture(func, args, kwargs)
+        return inner
+
+    def capture(self, func: t.Callable, args=None, kwargs=None) -> t.Any:
+        """
+        This runs given `func` while capturing it's STDOUT/STDERR.
+        Return value will be the original return from `func`.
+
+        STDOUT & STDERR will be captured and can be obtained by doing
+        `StdCapture.stdout`/`StdCapture.stderr`.
+
+        This acts as a wrapper for given `func`, it immediately runs it,
+        (if you want to decorate, call instance directly - `__call__`)
         """
         if self.auto_reset:
             self.reset()
