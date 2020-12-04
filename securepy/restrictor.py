@@ -1,19 +1,18 @@
 import typing as t
 
-from securepy.security import RESTRICTED_GLOBALS, SAFE_GLOBALS, UNRESTRICTED_GLOBALS
+from securepy.security import RESTRICTED_GLOBALS, SAFE_GLOBALS
 from securepy.stdcapture import StdCapture
-from securepy.timer import timed_run
+from securepy.timing import CapturingTimedFunction
 
 
 class Restrictor:
     """
     Prepare isolated python exec session
     """
-    def __init__(self, max_exec_time: int, restriction_scope: t.Literal[0, 1, 2, 3] = 2):
+    def __init__(self, max_exec_time: int, restriction_scope: t.Literal[1, 2, 3] = 2):
         """
         `restriction_level` will determine how restricted will the
         python code execution be. Restriction levels are as follows:
-        - 0: No restriction (regular exec)
         - 1: Restricted globals (removed some unsafe globals)
         - 2 (RECOMMENDED): Secure globals (only using relatively safe globals)
         - 3: No globals (very limiting but quite safe)
@@ -26,8 +25,9 @@ class Restrictor:
         self._set_global_scope(self.restriction_scope)
 
         self.stdcapture = StdCapture()
+        self.timed_exec = CapturingTimedFunction(self.max_exec_time, self.stdcapture)
 
-    def _set_global_scope(self, restriction_scope: t.Literal[0, 1, 2, 3]):
+    def _set_global_scope(self, restriction_scope: t.Literal[1, 2, 3]):
         """
         Override builtins in global scope based on given restriction_scope.
         Restriction levels are as follows:
@@ -36,9 +36,7 @@ class Restrictor:
         - 2 (RECOMMENDED): Secure globals (only using relatively safe globals)
         - 3: No globals (very limiting but quite safe)
         """
-        if restriction_scope <= 0:
-            self.globals = UNRESTRICTED_GLOBALS
-        elif restriction_scope == 1:
+        if restriction_scope == 1:
             self.globals = RESTRICTED_GLOBALS
         elif restriction_scope == 2:
             self.globals = SAFE_GLOBALS
@@ -56,15 +54,13 @@ class Restrictor:
 
         Return: (`stdout`, `raised exception`)
         """
-        wrapped = timed_run(self.max_exec_time, exec, args=(code, self.globals))
-
         exception = None
 
-        with self.stdcapture:
-            try:
-                wrapped()
-            except BaseException as exc:
-                exception = exc
+        wrapped = self.timed_exec(lambda code, globals: exec(code, globals))
+        try:
+            wrapped(code, self.globals)
+        except BaseException as exc:
+            exception = exc
 
         stdout = self.stdcapture.stdout
 
