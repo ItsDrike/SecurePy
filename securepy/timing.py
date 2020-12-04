@@ -2,6 +2,9 @@ import multiprocessing
 import multiprocessing.pool
 import typing as t
 from functools import wraps
+from io import StringIO
+
+from securepy.stdcapture import StdCapture
 
 
 class TimedFunctionError(Exception):
@@ -175,3 +178,44 @@ class TimedFunction:
 
         ret_info = self.child.recv()
         return self._value_return(ret_info, func)
+
+
+class CapturingTimedFunction(TimedFunction):
+    """
+    This overrides `TimedFunction` in order to provide the ability to
+    capture STDOUT/STDERR of given function using `securepy.stdcapture.StdCapture`.
+    """
+
+    def __init__(self, time_limit: int, std_capture: StdCapture):
+        super().__init__(time_limit)
+        self.std_capture = std_capture
+
+    def _capture_return(self, func: t.Callable, *args, **kwargs) -> t.Tuple[t.Literal["exc", "ret"], t.Any, StringIO, StringIO]:
+        """
+        Override capturing of values to be sent in order to
+        include the StrionIO objects which contains the STDOUT/STDERR.
+        """
+        header, ret = super()._capture_return(func, *args, **kwargs)
+        return (header, ret, self.std_capture.capturing_stdout, self.std_capture.capturing_stderr)
+
+    def _value_return(self, ret_info: t.Tuple[t.Literal["exc", "ret"], t.Any, StringIO, StringIO], func: t.Callable) -> t.Any:
+        """
+        Override returning of values in order to save the obtained
+        StringIO objects which contains the STDOUT/STDERR.
+        """
+        self.std_capture.capturing_stdout = ret_info[2]
+        self.std_capture.capturing_stderr = ret_info[3]
+
+        return super()._value_return((ret_info[0], ret_info[1]), func)
+
+    def __call__(self, func: t.Callable) -> t.Callable:
+        """
+        Override the default contextmanager of sueper and
+        additionally decorate the function using `std_capture`
+        in order to capture STDOUT/STDERR of that given function.
+        """
+        @wraps(func)
+        def inner(*args, **kwargs) -> None:
+            std_capturing_func = self.std_capture(func)
+            return self.run_timed(std_capturing_func, args, kwargs)
+        return inner
