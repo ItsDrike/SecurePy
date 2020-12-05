@@ -173,7 +173,8 @@ class TimedFunction:
         proc.join(self.time_limit)
 
         if proc.is_alive():
-            proc.terminate()
+            proc.kill()
+            proc.join()
             raise TimeoutError(f"Function `{func.__name__}` took longer than the allowed time limit ({self.time_limit})")
 
         ret_info = self.child.recv()
