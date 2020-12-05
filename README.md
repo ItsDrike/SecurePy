@@ -24,12 +24,13 @@ In order to use this library, you must first download it from PyPi: `pip install
 ```py
 import securepy
 
-restrictor = securepy.Restrictor(restriction_scope=2)
+restrictor = securepy.Restrictor(max_exec_time=3, restriction_scope=2)
 stdout, exc = restrictor.execute("""
 [your python code here]
 """)
 ```
 
+`max_exec_time` parameter is a way to specify the maximum amount of seconds the code will be allowed to run for until interruption.
 `restriction_scope` parameter is a way to specify how restricted the code should be. These are the currently available scopes:
 
 - **0**: No restriction (regular exec)
@@ -59,3 +60,94 @@ sandbox = securepy.Sandbox(
     read_chunk_size=10_000,  # Read from stdout/stderr by chunks of 10KB
     time_limit=6,  # Set maximum execution time to 6 seconds
 )
+```
+
+### Maximum time limiting
+
+SecurePy has the ability to stop given function if it takes over certain given maximum execution time.
+
+```py
+from time import sleep
+import securepy
+
+# Decorator
+@securepy.TimedFunction(3)  # Limit this function to 3 seconds
+def foo():
+    sleep(5)  # Function will take 5 seconds (> 3s limit)
+    return 2
+
+foo()  # <-- this will raise `TimeoutError` after 3 second limit and the execution of the function will be automatically stopped.
+
+# Wrapper
+timed_func = securepy.TimedFunction(3)
+
+def foo():
+    sleep(1)
+    return 2
+
+timed_foo = timed_func(foo)
+
+timed_foo()  # <-- this will return `2` after 1 second, since it didn't reach the given limit
+
+# Exceptions
+@securepy.TimedFunction(3)  # Limit this function to 3 seconds
+def foo():
+    raise TypeError("example exception")
+
+foo()  # <-- this will raise `securepy.TimedFunctionError` and the original exception will be stored in `TimedFunctionError.inner_exception`
+```
+
+**Important note:** Running timed functions requires running them as separate processes in order to be able to terminate them after time limit was reached. This means that you might encounter some issues if you want to access/change certain variables because they'll exist in separate process. If you need to obtain some extra variables, the best approach would be to subclass `TimedFunction` and override `_capture_return` and `_value_return` functions to your needs.
+
+### STDOUT/STDERR Capturing
+
+SecurePy has the ability to run a function in a STD capturing mode which will redirect STDOUT/STDERR and store it internally so that it can be accessed later on as a string.
+
+```py
+import securepy
+
+captured_std = securepy.StdCapture(auto_reset=True)
+
+# Context Manager:
+with captured_std:
+    print("hello")
+
+# Wrapper:
+def foo(*args, **kwargs):
+    print("hello")
+
+captured_std.capture(foo, args=None, kwargs=None)
+
+# Decorator:
+@captured_std
+def foo(*args, **kwargs):
+    print("hello")
+
+foo(*args, **kwargs)
+
+# Getting STDOUT
+captured_std.stdout  # <-- will contain the captured STDOUT (str): "hello\n"
+# Getting STDERR
+captured_std.stderr  # <-- will contain the captured STDERR (str): ""
+```
+
+`auto_reset` parameter passed into `StdCapture` is a bool which guides whether stored stdout should keep being added to or if it should reset itself once function ends. Default value is `True`. Note that if you set this to `False` you'll have to reset manually with `StdCapture.reset()`.
+
+### Capturing STDOUT/STDERR with Time Limiting
+
+If you need to capture STDOUT/STDERR for a function which you also want to time-limit, you can use `CapturingTimedFunction` which works very similarly to `TimedFunction` but apart from max time, it also takes the `StdCapture` class
+
+```py
+import securepy
+
+std_capture = securepy.StdCapture()
+
+@securepy.TimedFunction(time_limit=2, std_capture=std_capture)
+def foo(value):
+    print("hello")
+    return value
+
+foo(2)  # <-- will return `value` (2)
+
+std_capture.stdout  # <-- will hold the captured stdout string: "hello\n"
+```
