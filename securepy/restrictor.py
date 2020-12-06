@@ -10,7 +10,7 @@ class Restrictor:
     """
     Prepare isolated python exec session
     """
-    def __init__(self, max_exec_time: int, restriction_scope: t.Literal[1, 2, 3] = 2):
+    def __init__(self, max_exec_time: int, max_std_memory: int = 100_000, restriction_scope: t.Literal[1, 2, 3] = 2):
         """
         `restriction_level` will determine how restricted will the
         python code execution be. Restriction levels are as follows:
@@ -26,7 +26,7 @@ class Restrictor:
         self.restriction_scope = restriction_scope
         self._set_global_scope(self.restriction_scope)
 
-        self.stdcapture = StdCapture()
+        self.stdcapture = StdCapture(memory_limit=max_std_memory)
         self.timed_exec = CapturingTimedFunction(self.max_exec_time, self.stdcapture)
 
     def _set_global_scope(self, restriction_scope: t.Literal[1, 2, 3]):
