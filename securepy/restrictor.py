@@ -1,3 +1,4 @@
+import traceback
 import typing as t
 
 from securepy.security import RESTRICTED_GLOBALS, SAFE_GLOBALS
@@ -65,6 +66,8 @@ class Restrictor:
             wrapped(code, self.globals)
         except BaseException as exc:
             exception = exc
+            caught_traceback = traceback.format_exc()
+            exception.traceback = caught_traceback
 
         stdout = self.stdcapture.stdout
 
