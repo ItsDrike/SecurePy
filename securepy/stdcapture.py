@@ -32,12 +32,13 @@ class LimitedStringIO(StringIO):
 class StdCapture:
     """
     This class is used to capture STDOUT & STDERR of given
-    function, it can work as a wrapper, decorator or context manager.
+    function it can work as a wrapper, decorator or context manager.
 
     Context Manager:
-        captured_std = StdCapture()
+        captured_std = StdCapture(stdin='bye')
         with captured_std:
             print("hello")
+            print(input())
 
         captured_std.stdout  # <-- will contain the captured STDOUT (str)
 
@@ -69,9 +70,10 @@ class StdCapture:
     std storage size to that amount.
     """
 
-    def __init__(self, auto_reset: bool = True, memory_limit: int = 100_000):
+    def __init__(self, auto_reset: bool = True, memory_limit: int = 100_000, stdin=None):
         self.auto_reset = auto_reset
         self.memory_limit = memory_limit
+        self.stdin = stdin
 
         self.capturing_stdout = LimitedStringIO(self.memory_limit)
         self.capturing_stderr = LimitedStringIO(self.memory_limit)
@@ -99,7 +101,7 @@ class StdCapture:
 
     def __enter__(self) -> None:
         """
-        Temporarely override `sys.stdout` and `sys.stderr`
+        Temporarely override `sys.stdout`, `sys.stdin` and `sys.stderr`
         to use `StringIO` to capture standard output & error.
 
         Captured STDOUT/STDERR can be obtained by accessing
@@ -112,7 +114,7 @@ class StdCapture:
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         """
-        Restore the normal printing STDOUT/STDERR capabilities.
+        Restore the normal printing STDOUT/STDERR/STDIN capabilities.
         """
         self.restore_std()
 
@@ -149,14 +151,12 @@ class StdCapture:
         if kwargs is None:
             kwargs = dict()
         if stdin is None:
-            stdin = tuple()
+            stdin = self.stdin
 
         if self.auto_reset:
             self.reset()
 
         with self:
-            if not isinstance(sys.stdin, TextIOWrapper):
-                sys.stdin = TextIOWrapper(self.ingoing_stdin.write("\n".join(stdin)))
             return func(*args, **kwargs)
 
     def override_std(self) -> None:
@@ -168,6 +168,9 @@ class StdCapture:
             sys.stdout = self.capturing_stdout
         if not isinstance(sys.stderr, StringIO):
             sys.stderr = self.capturing_stderr
+        if not isinstance(sys.stdin, StringIO):
+            if self.stdin:
+                sys.stdin = StringIO(self.stdin)
 
     def restore_std(self) -> None:
         """
@@ -178,7 +181,7 @@ class StdCapture:
             sys.stdout = self.old_stdout
         if isinstance(sys.stderr, StringIO):
             sys.stderr = self.old_stderr
-        if not isinstance(sys.stdin, StringIO):
+        if isinstance(sys.stdin, StringIO):
             sys.stdin = self.old_stdin
 
     def reset(self) -> None:
@@ -221,3 +224,14 @@ def read_process_std(
     # Wait for process termination
     process.wait()
     return "".join(stdout), "".join(stderr)
+
+_original_stdout = sys.stdout
+captured = StdCapture(stdin="hello\nthere")
+
+with captured:
+    assert sys.stdout is not _original_stdout
+    print("test string")
+    print(input())
+
+assert sys.stdout is _original_stdout
+print('stdout: ', captured.stdout)

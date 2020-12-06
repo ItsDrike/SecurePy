@@ -24,13 +24,14 @@ In order to use this library, you must first download it from PyPi: `pip install
 ```py
 import securepy
 
-restrictor = securepy.Restrictor(max_exec_time=3, restriction_scope=2)
+restrictor = securepy.Restrictor(max_exec_time=3, restriction_scope=2, stdin="yourstringhere")
 stdout, exc = restrictor.execute("""
 [your python code here]
 """)
 ```
 
 `max_exec_time` parameter is a way to specify the maximum amount of seconds the code will be allowed to run for until interruption.
+`stdin` parameter is a way to give input values to a program. It is a string with values separated by `\n` in order to give values to multiple `input()` calls.
 `restriction_scope` parameter is a way to specify how restricted the code should be. These are the currently available scopes:
 
 - **0**: No restriction (regular exec)
