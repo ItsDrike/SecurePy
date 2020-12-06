@@ -117,7 +117,7 @@ class TimedFunction:
             raise TimedFunctionError(
                 f"Error occurred while executing timed function `{func.__name__}`, "
                 f"ended with `{inner_exc.__class__.__name__}: {inner_exc}`.",
-                inner_exception=ret_info[1]
+                inner_exception=inner_exc
             )
 
     def __call__(self, func: t.Callable) -> t.Callable:
@@ -189,6 +189,7 @@ class CapturingTimedFunction(TimedFunction):
     def __init__(self, time_limit: int, std_capture: StdCapture):
         super().__init__(time_limit)
         self.std_capture = std_capture
+        raise DeprecationWarning("This class is deprecated, it might cause issues with multiprocessing.")
 
     def _capture_return(self, func: t.Callable, *args, **kwargs) -> t.Tuple[t.Literal["exc", "ret"], t.Any, LimitedStringIO, LimitedStringIO]:
         """
@@ -201,7 +202,7 @@ class CapturingTimedFunction(TimedFunction):
     def _value_return(self, ret_info: t.Tuple[t.Literal["exc", "ret"], t.Any, LimitedStringIO, LimitedStringIO], func: t.Callable) -> t.Any:
         """
         Override returning of values in order to save the obtained
-        StringIO objects which contains the STDOUT/STDERR.
+        LimitedStringIO objects which contains the STDOUT/STDERR.
         """
         self.std_capture.capturing_stdout = ret_info[2]
         self.std_capture.capturing_stderr = ret_info[3]
