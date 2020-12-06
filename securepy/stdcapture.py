@@ -5,6 +5,30 @@ from functools import wraps
 from io import StringIO
 
 
+class MemoryOverflow(Exception):
+    def __init__(self, used_memory: int, max_memory: int, message: t.Optional[str] = None, *args, **kwargs) -> None:
+        self.used_memory = used_memory
+        self.max_memory = max_memory
+        if not message:
+            message = f"Maximum STDOUT/STDERR memory surpassed ({used_memory} > {max_memory})"
+        super().__init__(message, *args, **kwargs)
+
+
+class LimitedStringIO(StringIO):
+    """Override `io.StringIO` and apply a maximum memory limitation"""
+    def __init__(self, max_memory: int, initial_value: t.Optional[str] = None, newline: t.Optional[str] = None) -> None:
+        super().__init__(initial_value=initial_value, newline=newline)
+        self.max_memory = max_memory
+
+    def write(self, __s: str) -> int:
+        """Override write method to apply memory limitation."""
+        used_memory = sys.getsizeof(__s) + sys.getsizeof(self.getvalue())
+        if used_memory < self.max_memory:
+            return super().write(__s)
+        else:
+            raise MemoryOverflow(used_memory, self.max_memory)
+
+
 class StdCapture:
     """
     This class is used to capture STDOUT & STDERR of given
@@ -40,14 +64,17 @@ class StdCapture:
     You can also use captured_std.stderr to obtain captured STDERR.
 
     If you don't want to lose STDOUT/STDERR captured values after function is done running,
-    you can specify `auto_reset=False` on init and run `StdCapture.reset` manually when needed
+    you can specify `auto_reset=False` on init and run `StdCapture.reset` manually when needed.
+    You can also specify `memory_limit=100_000` in bytes (100kB) which will limit saved
+    std storage size to that amount.
     """
 
-    def __init__(self, auto_reset: bool = True):
+    def __init__(self, auto_reset: bool = True, memory_limit: int = 100_000):
         self.auto_reset = auto_reset
+        self.memory_limit = memory_limit
 
-        self.capturing_stdout = StringIO()
-        self.capturing_stderr = StringIO()
+        self.capturing_stdout = LimitedStringIO(self.memory_limit)
+        self.capturing_stderr = LimitedStringIO(self.memory_limit)
 
         self.old_stdout = sys.stdout
         self.old_stderr = sys.stderr
@@ -148,8 +175,8 @@ class StdCapture:
 
     def reset(self) -> None:
         """Reset stored captured stdout & stderr strings."""
-        self.capturing_stdout = StringIO()
-        self.capturing_stderr = StringIO()
+        self.capturing_stdout = LimitedStringIO(self.memory_limit)
+        self.capturing_stderr = LimitedStringIO(self.memory_limit)
 
     def __repr__(self) -> str:
         return f"<StdCapture(stdout={self.stdout}, stderr={self.stderr})"

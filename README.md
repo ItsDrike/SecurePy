@@ -106,7 +106,7 @@ SecurePy has the ability to run a function in a STD capturing mode which will re
 ```py
 import securepy
 
-captured_std = securepy.StdCapture(auto_reset=True)
+captured_std = securepy.StdCapture(auto_reset=True, memory_limit=100_000)
 
 # Context Manager:
 with captured_std:
@@ -132,6 +132,7 @@ captured_std.stderr  # <-- will contain the captured STDERR (str): ""
 ```
 
 `auto_reset` parameter passed into `StdCapture` is a bool which guides whether stored stdout should keep being added to or if it should reset itself once function ends. Default value is `True`. Note that if you set this to `False` you'll have to reset manually with `StdCapture.reset()`.
+`memory_limit` parameter passed into `StdCapture` is a maximum amount of memory in bytes which will be stored, if the amount of stored memory gets higher, raise `securepy.MemoryOverflow`
 
 ### Capturing STDOUT/STDERR with Time Limiting
 

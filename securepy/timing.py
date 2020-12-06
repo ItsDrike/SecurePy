@@ -2,9 +2,8 @@ import multiprocessing
 import multiprocessing.pool
 import typing as t
 from functools import wraps
-from io import StringIO
 
-from securepy.stdcapture import StdCapture
+from securepy.stdcapture import LimitedStringIO, StdCapture
 
 
 class TimedFunctionError(Exception):
@@ -191,7 +190,7 @@ class CapturingTimedFunction(TimedFunction):
         super().__init__(time_limit)
         self.std_capture = std_capture
 
-    def _capture_return(self, func: t.Callable, *args, **kwargs) -> t.Tuple[t.Literal["exc", "ret"], t.Any, StringIO, StringIO]:
+    def _capture_return(self, func: t.Callable, *args, **kwargs) -> t.Tuple[t.Literal["exc", "ret"], t.Any, LimitedStringIO, LimitedStringIO]:
         """
         Override capturing of values to be sent in order to
         include the StrionIO objects which contains the STDOUT/STDERR.
@@ -199,7 +198,7 @@ class CapturingTimedFunction(TimedFunction):
         header, ret = super()._capture_return(func, *args, **kwargs)
         return (header, ret, self.std_capture.capturing_stdout, self.std_capture.capturing_stderr)
 
-    def _value_return(self, ret_info: t.Tuple[t.Literal["exc", "ret"], t.Any, StringIO, StringIO], func: t.Callable) -> t.Any:
+    def _value_return(self, ret_info: t.Tuple[t.Literal["exc", "ret"], t.Any, LimitedStringIO, LimitedStringIO], func: t.Callable) -> t.Any:
         """
         Override returning of values in order to save the obtained
         StringIO objects which contains the STDOUT/STDERR.
