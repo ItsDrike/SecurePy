@@ -70,5 +70,6 @@ class Restrictor:
             exception.traceback = caught_traceback
 
         stdout = self.stdcapture.stdout
+        self.stdcapture.reset()
 
         return stdout, exception
