@@ -13,8 +13,9 @@ class Restrictor:
         """
         `restriction_level` will determine how restricted will the
         python code execution be. Restriction levels are as follows:
-        - 1: Restricted globals (removed some unsafe globals)
-        - 2 (RECOMMENDED): Secure globals (only using relatively safe globals)
+        - 0: Unrestricted globals (full builtins as they are in this file)
+        - 1: Restricted globals (removed some unsafe builtins)
+        - 2 (RECOMMENDED): Secure globals (only using relatively safe builtins)
         - 3: No globals (very limiting but quite safe)
         `max_exec_time` is the maximum time limit in seconds for which exec function
         will be allowed to run. After this timelimit ends, exec will be terminated
@@ -31,12 +32,15 @@ class Restrictor:
         """
         Override builtins in global scope based on given restriction_scope.
         Restriction levels are as follows:
-        - 0: No restriction (regular exec)
-        - 1: Restricted globals (removed some unsafe globals)
-        - 2 (RECOMMENDED): Secure globals (only using relatively safe globals)
+        - 0: Unrestricted globals (full builtins as they are in this file)
+        - 1: Restricted globals (removed some unsafe builtins)
+        - 2 (RECOMMENDED): Secure globals (only using relatively safe builtins)
+        - 3: No globals (very limiting but quite safe)
         - 3: No globals (very limiting but quite safe)
         """
-        if restriction_scope == 1:
+        if restriction_scope == 0:
+            self.globals = {"__builtins__": globals()["__builtins__"]}
+        elif restriction_scope == 1:
             self.globals = RESTRICTED_GLOBALS
         elif restriction_scope == 2:
             self.globals = SAFE_GLOBALS
