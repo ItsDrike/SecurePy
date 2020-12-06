@@ -2,7 +2,7 @@ import subprocess
 import sys
 import typing as t
 from functools import wraps
-from io import StringIO
+from io import StringIO, TextIOWrapper
 
 
 class MemoryOverflow(Exception):
@@ -75,9 +75,11 @@ class StdCapture:
 
         self.capturing_stdout = LimitedStringIO(self.memory_limit)
         self.capturing_stderr = LimitedStringIO(self.memory_limit)
+        self.ingoing_stdin = LimitedStringIO(self.memory_limit)
 
         self.old_stdout = sys.stdout
         self.old_stderr = sys.stderr
+        self.old_stdin = sys.stdin
 
     @property
     def stdout(self) -> str:
@@ -131,7 +133,7 @@ class StdCapture:
             return self.capture(func, args, kwargs)
         return inner
 
-    def capture(self, func: t.Callable, args=None, kwargs=None) -> t.Any:
+    def capture(self, func: t.Callable, args=None, kwargs=None, stdin=None) -> t.Any:
         """
         This runs given `func` while capturing it's STDOUT/STDERR.
         Return value will be the original return from `func`.
@@ -146,11 +148,15 @@ class StdCapture:
             args = tuple()
         if kwargs is None:
             kwargs = dict()
+        if stdin is None:
+            stdin = tuple()
 
         if self.auto_reset:
             self.reset()
 
         with self:
+            if not isinstance(sys.stdin, TextIOWrapper):
+                sys.stdin = TextIOWrapper(self.ingoing_stdin.write("\n".join(stdin)))
             return func(*args, **kwargs)
 
     def override_std(self) -> None:
@@ -172,6 +178,8 @@ class StdCapture:
             sys.stdout = self.old_stdout
         if isinstance(sys.stderr, StringIO):
             sys.stderr = self.old_stderr
+        if not isinstance(sys.stdin, StringIO):
+            sys.stdin = self.old_stdin
 
     def reset(self) -> None:
         """Reset stored captured stdout & stderr strings."""
