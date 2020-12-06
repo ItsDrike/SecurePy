@@ -41,7 +41,7 @@ class Restrictor:
         elif restriction_scope == 2:
             self.globals = SAFE_GLOBALS
         elif restriction_scope == 3:
-            self.globals = {"__builtins__": None}
+            self.globals = {"__builtins__": {}}
         else:
             raise TypeError("`restriction_scope` must be a literal value: 0, 1, 2 or 3.")
 
