@@ -74,11 +74,11 @@ class IOCage:
     """
 
     def __init__(
-        self, 
-        auto_reset: bool = True, 
-        memory_limit: int = 100_000, 
-        stdin: t.Optional[str] = None, 
-        enable_stdout: bool = True, 
+        self,
+        auto_reset: bool = True,
+        memory_limit: int = 100_000,
+        stdin: t.Optional[str] = None,
+        enable_stdout: bool = True,
         enable_stderr: bool = True,
     ):
         self.auto_reset = auto_reset
