@@ -86,8 +86,8 @@ class IOCage:
 
         self.stdin = stdin
 
-        self.capturing_stdout = LimitedStringIO(self.memory_limit)
-        self.capturing_stderr = LimitedStringIO(self.memory_limit)
+        self.stdout_funnel = LimitedStringIO(self.memory_limit)
+        self.stderr_funnel = LimitedStringIO(self.memory_limit)
 
         self.old_stdout = sys.stdout
         self.old_stderr = sys.stderr
@@ -99,7 +99,7 @@ class IOCage:
         Return captured STDOUT in form of string. This will
         return empty string in case no STDOUT was captured.
         """
-        return self.capturing_stdout.getvalue()
+        return self.stdout_funnel.getvalue()
 
     @property
     def stderr(self) -> str:
@@ -107,7 +107,7 @@ class IOCage:
         Return captured STDERR in form of string. This will
         return empty string in case no STDERR was captured.
         """
-        return self.capturing_stderr.getvalue()
+        return self.stderr_funnel.getvalue()
 
     def __enter__(self) -> None:
         """
@@ -145,7 +145,7 @@ class IOCage:
             return self.capture(func, args, kwargs)
         return inner
 
-    def capture(self, func: t.Callable, stdin: t.Optional[str] = None, args=None, kwargs=None) -> t.Any:
+    def capture(self, func: t.Callable, args=None, kwargs=None, stdin: t.Optional[str] = None) -> t.Any:
         """
         This runs given `func` while capturing it's STDOUT/STDERR
         and simulating it's STDIN.
@@ -175,10 +175,10 @@ class IOCage:
         Override `sys.stdout`, `sys.stdin` and `sys.stderr` to use
         `StringIO` instead to capture standard output & error.
         """
-        if not isinstance(sys.stdout, StringIO):
-            sys.stdout = self.capturing_stdout
-        if not isinstance(sys.stderr, StringIO):
-            sys.stderr = self.capturing_stderr
+        if not isinstance(sys.stdout, StringIO) ans self.enable_stdout:
+            sys.stdout = self.stdout_funnel
+        if not isinstance(sys.stderr, StringIO) and self.enable_stderr:
+            sys.stderr = self.stderr_funnel
         if not isinstance(sys.stdin, StringIO) and self.stdin:
             sys.stdin = StringIO(self.stdin)
 
@@ -196,8 +196,8 @@ class IOCage:
 
     def reset(self) -> None:
         """Reset stored captured stdout & stderr strings."""
-        self.capturing_stdout = LimitedStringIO(self.memory_limit)
-        self.capturing_stderr = LimitedStringIO(self.memory_limit)
+        self.stdout_funnel = LimitedStringIO(self.memory_limit)
+        self.stderr_funnel = LimitedStringIO(self.memory_limit)
 
     def __repr__(self) -> str:
         return f"<IOCage(stdout={self.stdout}, stderr={self.stderr})"

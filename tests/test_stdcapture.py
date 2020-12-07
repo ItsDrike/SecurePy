@@ -45,10 +45,11 @@ class IOCageTests(unittest.TestCase):
 
     def test_manual_capture(self):
         _original_stdout = sys.stdout
-        captured = IOCage()
+        captured = IOCage(stdin="hello")
 
         captured.override_std()
         print("hello")
+        input()
         self.assertIsNot(sys.stdout, _original_stdout)
         captured.restore_std()
         self.assertIs(sys.stdout, _original_stdout)
@@ -56,70 +57,75 @@ class IOCageTests(unittest.TestCase):
     def test_context_manager(self):
         """Make sure context manager implementation of IOCage works."""
         _original_stdout = sys.stdout
-        captured = IOCage()
+        captured = IOCage(stdin="hello")
 
         with captured:
             self.assertIsNot(sys.stdout, _original_stdout)
             print("test string")
+            print(input())
 
-        self.assertEqual(captured.stdout, "test string\n")
+        self.assertEqual(captured.stdout, "test string\nhello\n")
         self.assertIs(sys.stdout, _original_stdout)
 
     def test_decorator(self):
         """Make sure context manager implementation of IOCage works."""
         _original_stdout = sys.stdout
-        captured = IOCage()
+        captured = IOCage(stdin="hello")
 
         @captured
         def foo():
             self.assertIsNot(sys.stdout, _original_stdout)
             print("test string")
+            print(input())
 
         foo()
 
-        self.assertEqual(captured.stdout, "test string\n")
+        self.assertEqual(captured.stdout, "test string\nhello\n")
         self.assertIs(sys.stdout, _original_stdout)
 
     def test_decorator_arguments(self):
         """Make sure context manager implementation of IOCage works."""
         _original_stdout = sys.stdout
-        captured = IOCage()
+        captured = IOCage(stdin="hello")
 
         @captured
         def foo(my_string, my_kwarg="default"):
             self.assertIsNot(sys.stdout, _original_stdout)
             print(my_string + my_kwarg)
+            print(input())
 
         foo("test ", my_kwarg="string")
 
-        self.assertEqual(captured.stdout, "test string\n")
+        self.assertEqual(captured.stdout, "test string\nhello\n")
         self.assertIs(sys.stdout, _original_stdout)
 
     def test_wrapper(self):
         """Make sure context manager implementation of IOCage works."""
         _original_stdout = sys.stdout
-        captured = IOCage()
+        captured = IOCage(stdin="hello")
 
         def foo():
             self.assertIsNot(sys.stdout, _original_stdout)
             print("test string")
+            print(input())
 
         captured.capture(foo)
 
-        self.assertEqual(captured.stdout, "test string\n")
+        self.assertEqual(captured.stdout, "test string\nhello\n")
         self.assertIs(sys.stdout, _original_stdout)
 
     def test_wrapper_arguments(self):
         _original_stdout = sys.stdout
-        captured = IOCage()
+        captured = IOCage(stdin="hello")
 
         def foo(my_string, my_kwarg="default"):
             self.assertIsNot(sys.stdout, _original_stdout)
             print(my_string + my_kwarg)
+            print(input())
 
         captured.capture(foo, args=("test ", ), kwargs={"my_kwarg": "string"})
 
-        self.assertEqual(captured.stdout, "test string\n")
+        self.assertEqual(captured.stdout, "test string\nhello\n")
         self.assertIs(sys.stdout, _original_stdout)
 
     def test_capture(self):
