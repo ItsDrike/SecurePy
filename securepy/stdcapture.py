@@ -137,8 +137,8 @@ class IOCage:
 
     def capture(self, func: t.Callable, stdin: t.Optional[str] = None, args=None, kwargs=None) -> t.Any:
         """
-        This runs given `func` while capturing it's STDOUT/STDERR.
-        Can pass `stdin` string to `func`
+        This runs given `func` while capturing it's STDOUT/STDERR
+        and simulating it's STDIN.
         Return value will be the original return from `func`.
 
         STDOUT & STDERR will be captured and can be obtained by doing
