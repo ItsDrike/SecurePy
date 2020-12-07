@@ -77,7 +77,7 @@ class IOCage:
 
         self.capturing_stdout = LimitedStringIO(self.memory_limit)
         self.capturing_stderr = LimitedStringIO(self.memory_limit)
-        self.ingoing_stdin = LimitedStringIO(self.memory_limit)
+        self.simulated_stdin = LimitedStringIO(self.memory_limit)
 
         self.old_stdout = sys.stdout
         self.old_stderr = sys.stderr
