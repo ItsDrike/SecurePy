@@ -70,7 +70,7 @@ class IOCage:
     std storage size to that amount.
     """
 
-    def __init__(self, auto_reset: bool = True, memory_limit: int = 100_000, stdin=None):
+    def __init__(self, auto_reset: bool = True, memory_limit: int = 100_000, stdin: t.Optional[str] = None):
         self.auto_reset = auto_reset
         self.memory_limit = memory_limit
         self.stdin = stdin
