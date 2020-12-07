@@ -131,11 +131,11 @@ class IOCage:
         """
         self.restore_std()
 
-    def __call__(self, func: t.Callable) -> t.Any:
+    def __call__(self, func: t.Callable, stdin: t.Optional[str] = None) -> t.Any:
         """
         This decorates given `func` and captures it's STDOUT/STDERR
-        when it's run.
-        Return value will be the original return from `func`.
+        while simulating it's STDIN, if `self.stdin` is set.
+        Return value will be the original return from `func`
 
         STDOUT & STDERR will be captured and can be obtained by doing
         `IOCage.stdout`/`IOCage.stderr`.
@@ -145,7 +145,7 @@ class IOCage:
         """
         @wraps(func)
         def inner(*args, **kwargs) -> t.Any:
-            return self.capture(func, args, kwargs)
+            return self.capture(func, args, kwargs, stdin)
         return inner
 
     def capture(self, func: t.Callable, args=None, kwargs=None, stdin: t.Optional[str] = None) -> t.Any:
@@ -160,18 +160,22 @@ class IOCage:
         This acts as a wrapper for given `func`, it immediately runs it,
         (if you want to decorate, call instance directly - `__call__`)
         """
+        old_stdin = self.stdin
+
         if args is None:
             args = tuple()
         if kwargs is None:
             kwargs = dict()
-        if stdin is None:
-            stdin = self.stdin
+        if stdin is not None:
+            self.stdin = stdin
 
         if self.auto_reset:
             self.reset()
 
         with self:
             return func(*args, **kwargs)
+
+        self.stdin = old_stdin
 
     def override_std(self) -> None:
         """
