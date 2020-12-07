@@ -31,7 +31,7 @@ class LimitedStringIO(StringIO):
 
 class IOCage:
     """
-    This class is used to capture STDOUT and STDERR, while able to give STDIN
+    This class is used to capture STDOUT and STDERR, while able to simulate STDIN
     to given function it can work as a wrapper, decorator or context manager.
 
     Context Manager:
