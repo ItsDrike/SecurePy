@@ -102,7 +102,7 @@ class IOCage:
     def __enter__(self) -> None:
         """
         Temporarely override `sys.stdout`, `sys.stdin` and `sys.stderr`
-        to use `StringIO` to capture standard output & error.
+        to use `LimitedStringIO` to capture standard output & error.
 
         Captured STDOUT/STDERR can be obtained by accessing
         `IOCage.stdout`/`IOCage.stderr`.
