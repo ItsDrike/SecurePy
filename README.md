@@ -24,20 +24,29 @@ In order to use this library, you must first download it from PyPi: `pip install
 ```py
 import securepy
 
-restrictor = securepy.Restrictor(max_exec_time=3, restriction_scope=2, stdin="yourstringhere")
+restrictor = securepy.Restrictor(
+    max_exec_time=3,
+    restriction_scope=2,
+    stdin=None,
+    enable_stdout=True,
+    enable_stderr=True,
+)
 stdout, exc = restrictor.execute("""
 [your python code here]
 """)
 ```
 
-`max_exec_time` parameter is a way to specify the maximum amount of seconds the code will be allowed to run for until interruption.
-`stdin` parameter is a way to give input values to a program. It is a string with values separated by `\n` in order to give values to multiple `input()` calls.
+`max_exec_time` parameter is a way to specify the maximum amount of seconds the code will be allowed to run for until interruption. (default: `3`)
 `restriction_scope` parameter is a way to specify how restricted the code should be. These are the currently available scopes:
 
 - **0**: No restriction (regular exec)
 - **1**: Restricted globals (removed some unsafe globals)
-- **2** (RECOMMENDED): Secure globals (only using relatively safe globals)
+- **2** (RECOMMENDED, default): Secure globals (only using relatively safe globals)
 - **3**: No globals (very limiting but quite safe)
+
+`stdin` parameter is a way to simulate input values to a program. It is a string with values separated by `\n` in order to simulate values to multiple `input()` calls. If not specified, it will default to `None`, and leave `sys.stdin` alone. (default: `None`)
+`enable_stdout` parameter is a way to control wether `stdout` will be captured. (default: `True`)
+`enable_stderr` parameter is a way to control wether `stderr` will be captured. (default: `True`)
 
 `stdout` and `exc` variables will hold the outputs from your code. `exc` will hold the exception if there is some (otherwise it will be `None`). `stdout` will hold the simple standard output (print output).
 
@@ -100,22 +109,30 @@ foo()  # <-- this will raise `securepy.TimedFunctionError` and the original exce
 
 **Important note:** Running timed functions requires running them as separate processes in order to be able to terminate them after time limit was reached. This means that you might encounter some issues if you want to access/change certain variables because they'll exist in separate process. If you need to obtain some extra variables, the best approach would be to subclass `TimedFunction` and override `_capture_return` and `_value_return` functions to your needs.
 
-### STDOUT/STDERR Capturing
+### I/O Control
 
-SecurePy has the ability to run a function in a STD capturing mode which will redirect STDOUT/STDERR and store it internally so that it can be accessed later on as a string.
+SecurePy has the ability to run a function in a STD capturing and simulating mode which will redirect STDOUT/STDERR and store it internally so that it can be accessed later on as a string, and simulate STDIN to be accessed inside the function.
 
 ```py
 import securepy
 
-captured_std = securepy.IOCage(auto_reset=True, memory_limit=100_000)
+captured_std = securepy.IOCage(
+    auto_reset=True,
+    memory_limit=100_000,
+    stdin="hi\nthere"
+)
 
 # Context Manager:
 with captured_std:
     print("hello")
+    print(input())
+    print(input())
 
 # Wrapper:
 def foo(*args, **kwargs):
     print("hello")
+    print(input())
+    print(input())
 
 captured_std.capture(foo, args=None, kwargs=None)
 
@@ -123,17 +140,22 @@ captured_std.capture(foo, args=None, kwargs=None)
 @captured_std
 def foo(*args, **kwargs):
     print("hello")
+    print(input())
+    print(input())
 
 foo(*args, **kwargs)
 
 # Getting STDOUT
-captured_std.stdout  # <-- will contain the captured STDOUT (str): "hello\n"
+captured_std.stdout  # <-- will contain the captured STDOUT (str): "hello\nhi\nthere"
 # Getting STDERR
 captured_std.stderr  # <-- will contain the captured STDERR (str): ""
 ```
 
-`auto_reset` parameter passed into `IOCage` is a bool which guides whether stored stdout should keep being added to or if it should reset itself once function ends. Default value is `True`. Note that if you set this to `False` you'll have to reset manually with `IOCage.reset()`.
-`memory_limit` parameter passed into `IOCage` is a maximum amount of memory in bytes which will be stored, if the amount of stored memory gets higher, raise `securepy.MemoryOverflow`
+`auto_reset` parameter passed into `IOCage` is a bool which guides whether stored stdout should keep being added to or if it should reset itself once function ends. Default value is `True`. Note that if you set this to `False` you'll have to reset manually with `IOCage.reset()`. (default: `True`)
+`memory_limit` parameter passed into `IOCage` is a maximum amount of memory in bytes which will be stored, if the amount of stored memory gets higher, raise `securepy.MemoryOverflow` (default: `100_000`)
+`stdin` parameter is a way to simulate input values to a program. It is a string with values separated by `\n` in order to simulate values to multiple `input()` calls. If not specified, it will default to `None`, and leave `sys.stdin` alone. (default: `None`)
+`enable_stdout` parameter is a way to control wether `stdout` will be captured. (default: `True`)
+`enable_stderr` parameter is a way to control wether `stderr` will be captured. (default: `True`)
 
 ### Capturing STDOUT/STDERR with Time Limiting
 
