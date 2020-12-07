@@ -70,14 +70,21 @@ class IOCage:
     std storage size to that amount.
     """
 
-    def __init__(self, auto_reset: bool = True, memory_limit: int = 100_000, stdin: t.Optional[str] = None):
+    def __init__(
+        self, 
+        auto_reset: bool = True, 
+        memory_limit: int = 100_000, 
+        stdin: t.Optional[str] = None, 
+        enable_stdout: bool = True, 
+        enable_stderr: bool = True,
+    ):
         self.auto_reset = auto_reset
         self.memory_limit = memory_limit
+
         self.stdin = stdin
 
         self.capturing_stdout = LimitedStringIO(self.memory_limit)
         self.capturing_stderr = LimitedStringIO(self.memory_limit)
-        self.simulated_stdin = LimitedStringIO(self.memory_limit)
 
         self.old_stdout = sys.stdout
         self.old_stderr = sys.stderr

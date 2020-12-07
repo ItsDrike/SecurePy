@@ -2,7 +2,7 @@ import traceback
 import typing as t
 
 from securepy.security import RESTRICTED_GLOBALS, SAFE_GLOBALS
-from securepy.stdcapture import StdCapture
+from securepy.iocage import IOCage
 from securepy.timing import CapturingTimedFunction
 
 
@@ -26,8 +26,8 @@ class Restrictor:
         self.restriction_scope = restriction_scope
         self._set_global_scope(self.restriction_scope)
 
-        self.stdcapture = StdCapture()
-        self.timed_exec = CapturingTimedFunction(self.max_exec_time, self.stdcapture)
+        self.IOCage = IOCage()
+        self.timed_exec = CapturingTimedFunction(self.max_exec_time, self.IOCage)
 
     def _set_global_scope(self, restriction_scope: t.Literal[1, 2, 3]):
         """
@@ -69,7 +69,7 @@ class Restrictor:
             caught_traceback = traceback.format_exc()
             exception.traceback = caught_traceback
 
-        stdout = self.stdcapture.stdout
-        self.stdcapture.reset()
+        stdout = self.IOCage.stdout
+        self.IOCage.reset()
 
         return stdout, exception

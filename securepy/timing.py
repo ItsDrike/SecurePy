@@ -3,7 +3,7 @@ import multiprocessing.pool
 import typing as t
 from functools import wraps
 
-from securepy.stdcapture import LimitedStringIO, StdCapture
+from securepy.iocage import LimitedStringIO, IOCage
 
 
 class TimedFunctionError(Exception):
@@ -183,10 +183,10 @@ class TimedFunction:
 class CapturingTimedFunction(TimedFunction):
     """
     This overrides `TimedFunction` in order to provide the ability to
-    capture STDOUT/STDERR of given function using `securepy.stdcapture.StdCapture`.
+    capture STDOUT/STDERR of given function using `securepy.IOCage.IOCage`.
     """
 
-    def __init__(self, time_limit: int, std_capture: StdCapture):
+    def __init__(self, time_limit: int, std_capture: IOCage):
         super().__init__(time_limit)
         self.std_capture = std_capture
 
