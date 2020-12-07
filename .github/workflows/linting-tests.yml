@@ -1,4 +1,4 @@
-name: Flake8 Linting
+name: Linting & Tests
 
 on:
   push:
@@ -73,7 +73,13 @@ jobs:
       - name: Run pre-commit hooks
         run: export PIP_USER=0; SKIP=flake8 pre-commit run --all-files
 
-      - name: Run flake8
+      # Run flake8 formatting checks for general code style (lint) check
+      # Error format:
+      # ::error file={filename},line={line},col={col}::{message}
+      - name: Run lint check with flake8
         run: "flake8 \
         --format='::error file=%(path)s,line=%(row)d,col=%(col)d::\
         [flake8] %(code)s: %(text)s'"
+
+      - name: Run unit-tests
+        run: python -m unittest
