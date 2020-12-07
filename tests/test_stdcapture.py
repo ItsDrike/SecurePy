@@ -1,9 +1,9 @@
 import sys
 import unittest
 import warnings
-import subprocess
+# import subprocess
 
-from securepy import IOCage, LimitedStringIO, MemoryOverflow, read_process_std
+from securepy import IOCage, LimitedStringIO, MemoryOverflow  # , read_process_std
 
 
 class LimitedStringIOTests(unittest.TestCase):
