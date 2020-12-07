@@ -2,7 +2,7 @@ import subprocess
 import sys
 import typing as t
 from functools import wraps
-from io import StringIO, TextIOWrapper
+from io import StringIO
 
 
 class MemoryOverflow(Exception):
@@ -29,16 +29,16 @@ class LimitedStringIO(StringIO):
             raise MemoryOverflow(used_memory, self.max_memory)
 
 
-class StdCapture:
+class IOCage:
     """
-    This class is used to capture STDOUT & STDERR of given
-    function it can work as a wrapper, decorator or context manager.
+    This class is used to capture STDOUT and STDERR, while able to give STDIN
+    to given function it can work as a wrapper, decorator or context manager.
 
     Context Manager:
-        captured_std = StdCapture(stdin='bye')
+        captured_std = IOCage(stdin='bye')  # `stdin` as a param to init. If not specified, `sys.stdin` will not be overrided
         with captured_std:
             print("hello")
-            print(input())
+            print(input())  # Will print 'bye' to stdout
 
         captured_std.stdout  # <-- will contain the captured STDOUT (str)
 
@@ -46,13 +46,13 @@ class StdCapture:
         def foo(*args, **kwargs):
             print("hello")
 
-        captured_std = StdCapture()
-        captured_std.capture(foo, args=None, kwargs=None)
+        captured_std = IOCage()
+        captured_std.capture(foo, args=None, kwargs=None)  # Can pass `stdin` or it will default to value from init
 
         captured_std.stdout  # <-- will contain the captured STDOUT (str)
 
     Decorator:
-        captured_std = StdCapture()
+        captured_std = IOCage()
 
         @captured_std
         def foo(*args, **kwargs):
@@ -65,7 +65,7 @@ class StdCapture:
     You can also use captured_std.stderr to obtain captured STDERR.
 
     If you don't want to lose STDOUT/STDERR captured values after function is done running,
-    you can specify `auto_reset=False` on init and run `StdCapture.reset` manually when needed.
+    you can specify `auto_reset=False` on init and run `IOCage.reset` manually when needed.
     You can also specify `memory_limit=100_000` in bytes (100kB) which will limit saved
     std storage size to that amount.
     """
@@ -105,7 +105,7 @@ class StdCapture:
         to use `StringIO` to capture standard output & error.
 
         Captured STDOUT/STDERR can be obtained by accessing
-        `StdCapture.stdout`/`StdCapture.stderr`.
+        `IOCage.stdout`/`IOCage.stderr`.
         """
         if self.auto_reset:
             self.reset()
@@ -114,7 +114,7 @@ class StdCapture:
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         """
-        Restore the normal printing STDOUT/STDERR/STDIN capabilities.
+        Restore the normal STDOUT/STDERR/STDIN capabilities.
         """
         self.restore_std()
 
@@ -125,9 +125,9 @@ class StdCapture:
         Return value will be the original return from `func`.
 
         STDOUT & STDERR will be captured and can be obtained by doing
-        `StdCapture.stdout`/`StdCapture.stderr`.
+        `IOCage.stdout`/`IOCage.stderr`.
 
-        The functionality is handeled in `StdCapture.capture`, this method
+        The functionality is handeled in `IOCage.capture`, this method
         serves only as a decorator for given `func`.
         """
         @wraps(func)
@@ -138,10 +138,11 @@ class StdCapture:
     def capture(self, func: t.Callable, args=None, kwargs=None, stdin=None) -> t.Any:
         """
         This runs given `func` while capturing it's STDOUT/STDERR.
+        Can pass `stdin` string to `func`
         Return value will be the original return from `func`.
 
         STDOUT & STDERR will be captured and can be obtained by doing
-        `StdCapture.stdout`/`StdCapture.stderr`.
+        `IOCage.stdout`/`IOCage.stderr`.
 
         This acts as a wrapper for given `func`, it immediately runs it,
         (if you want to decorate, call instance directly - `__call__`)
@@ -161,7 +162,7 @@ class StdCapture:
 
     def override_std(self) -> None:
         """
-        Override `sys.stdout` and `sys.stderr` to use
+        Override `sys.stdout`, `stdin` and `sys.stderr` to use
         `StringIO` instead to capture standard output & error.
         """
         if not isinstance(sys.stdout, StringIO):
@@ -190,7 +191,7 @@ class StdCapture:
         self.capturing_stderr = LimitedStringIO(self.memory_limit)
 
     def __repr__(self) -> str:
-        return f"<StdCapture(stdout={self.stdout}, stderr={self.stderr})"
+        return f"<IOCage(stdout={self.stdout}, stderr={self.stderr})"
 
 
 def read_process_std(
@@ -224,14 +225,3 @@ def read_process_std(
     # Wait for process termination
     process.wait()
     return "".join(stdout), "".join(stderr)
-
-_original_stdout = sys.stdout
-captured = StdCapture(stdin="hello\nthere")
-
-with captured:
-    assert sys.stdout is not _original_stdout
-    print("test string")
-    print(input())
-
-assert sys.stdout is _original_stdout
-print('stdout: ', captured.stdout)
