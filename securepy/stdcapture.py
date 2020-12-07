@@ -23,10 +23,13 @@ class LimitedStringIO(StringIO):
     def write(self, __s: str) -> int:
         """Override write method to apply memory limitation."""
         used_memory = sys.getsizeof(__s) + sys.getsizeof(self.getvalue())
-        if used_memory < self.max_memory:
+        if used_memory <= self.max_memory:
             return super().write(__s)
         else:
             raise MemoryOverflow(used_memory, self.max_memory)
+
+    def __repr__(self) -> str:
+        return f"<LimitedStringIO max_memory={self.max_memory}, value={self.getvalue()}>"
 
 
 class StdCapture:
@@ -168,9 +171,9 @@ class StdCapture:
         Revert override of `sys.stdout` and `sys.stderr`
         to restore normal printing capabilities without capturing.
         """
-        if isinstance(sys.stdout, StringIO):
+        if isinstance(sys.stdout, LimitedStringIO):
             sys.stdout = self.old_stdout
-        if isinstance(sys.stderr, StringIO):
+        if isinstance(sys.stderr, LimitedStringIO):
             sys.stderr = self.old_stderr
 
     def reset(self) -> None:
