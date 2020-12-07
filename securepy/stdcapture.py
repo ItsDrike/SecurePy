@@ -169,9 +169,8 @@ class IOCage:
             sys.stdout = self.capturing_stdout
         if not isinstance(sys.stderr, StringIO):
             sys.stderr = self.capturing_stderr
-        if not isinstance(sys.stdin, StringIO):
-            if self.stdin:
-                sys.stdin = StringIO(self.stdin)
+        if not isinstance(sys.stdin, StringIO) and self.stdin:
+            sys.stdin = StringIO(self.stdin)
 
     def restore_std(self) -> None:
         """
