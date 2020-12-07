@@ -1,6 +1,7 @@
+import sys
 import unittest
 
-from securepy.stdcapture import LimitedStringIO, MemoryOverflow
+from securepy.stdcapture import LimitedStringIO, MemoryOverflow, StdCapture
 
 
 class LimitedStringIOTests(unittest.TestCase):
@@ -37,3 +38,141 @@ class LimitedStringIOTests(unittest.TestCase):
                     self.assertIsInstance(e, MemoryOverflow)
                     if isinstance(e, MemoryOverflow):
                         self.assertEqual(e.used_memory, test_memory)
+
+
+class StdCaptureTests(unittest.TestCase):
+    """Tests for the STDOUT/STDERR capturing."""
+
+    def test_manual_capture(self):
+        _original_stdout = sys.stdout
+        captured = StdCapture()
+
+        captured.override_std()
+        print("hello")
+        self.assertIsNot(sys.stdout, _original_stdout)
+        captured.restore_std()
+        self.assertIs(sys.stdout, _original_stdout)
+
+    def test_context_manager(self):
+        """Make sure context manager implementation of StdCapture works."""
+        _original_stdout = sys.stdout
+        captured = StdCapture()
+
+        with captured:
+            self.assertIsNot(sys.stdout, _original_stdout)
+            print("test string")
+
+        self.assertEqual(captured.stdout, "test string\n")
+        self.assertIs(sys.stdout, _original_stdout)
+
+    def test_decorator(self):
+        """Make sure context manager implementation of StdCapture works."""
+        _original_stdout = sys.stdout
+        captured = StdCapture()
+
+        @captured
+        def foo():
+            self.assertIsNot(sys.stdout, _original_stdout)
+            print("test string")
+
+        foo()
+
+        self.assertEqual(captured.stdout, "test string\n")
+        self.assertIs(sys.stdout, _original_stdout)
+
+    def test_decorator_arguments(self):
+        """Make sure context manager implementation of StdCapture works."""
+        _original_stdout = sys.stdout
+        captured = StdCapture()
+
+        @captured
+        def foo(my_string, my_kwarg="default"):
+            self.assertIsNot(sys.stdout, _original_stdout)
+            print(my_string + my_kwarg)
+
+        foo("test ", my_kwarg="string")
+
+        self.assertEqual(captured.stdout, "test string\n")
+        self.assertIs(sys.stdout, _original_stdout)
+
+    def test_wrapper(self):
+        """Make sure context manager implementation of StdCapture works."""
+        _original_stdout = sys.stdout
+        captured = StdCapture()
+
+        def foo():
+            self.assertIsNot(sys.stdout, _original_stdout)
+            print("test string")
+
+        captured.capture(foo)
+
+        self.assertEqual(captured.stdout, "test string\n")
+        self.assertIs(sys.stdout, _original_stdout)
+
+    def test_wrapper_arguments(self):
+        _original_stdout = sys.stdout
+        captured = StdCapture()
+
+        def foo(my_string, my_kwarg="default"):
+            self.assertIsNot(sys.stdout, _original_stdout)
+            print(my_string + my_kwarg)
+
+        captured.capture(foo, args=("test ", ), kwargs={"my_kwarg": "string"})
+
+        self.assertEqual(captured.stdout, "test string\n")
+        self.assertIs(sys.stdout, _original_stdout)
+
+    def test_capture(self):
+        test_cases = (
+            ("foo",),  # Single print
+            ("python", "is", "cool"),  # Multiple prints
+            (None, ),  # No print
+        )
+
+        for test_prints in test_cases:
+            with self.subTest(test_prints=test_prints):
+                capture = StdCapture()
+
+                with capture:
+                    for test_print in test_prints:
+                        if test_print is not None:
+                            print(test_print)
+
+                expected_stdout = "\n".join(s for s in test_prints if s is not None)
+                expected_stdout = expected_stdout + "\n" if not expected_stdout == "" else expected_stdout
+                self.assertEqual(capture.stdout, expected_stdout)
+
+    def test_auto_reset(self):
+        captured = StdCapture(auto_reset=True)
+
+        with captured:
+            print("print1")
+        self.assertEqual(captured.stdout, "print1\n")
+
+        with captured:
+            print("print2")
+        self.assertEqual(captured.stdout, "print2\n")
+
+    def test_no_auto_reset(self):
+        captured = StdCapture(auto_reset=False)
+
+        with captured:
+            print("print1")
+
+        with captured:
+            print("print2")
+
+        self.assertEqual(captured.stdout, "print1\nprint2\n")
+
+    def test_manual_reset(self):
+        captured = StdCapture(auto_reset=False)
+
+        with captured:
+            print("print1")
+        self.assertEqual(captured.stdout, "print1\n")
+
+        captured.reset()
+
+        with captured:
+            print("print2")
+        self.assertEqual(captured.stdout, "print2\n")
