@@ -86,6 +86,9 @@ class IOCage:
 
         self.stdin = stdin
 
+        self.enable_stdout = enable_stdout
+        self.enable_stderr = enable_stderr
+
         self.stdout_funnel = LimitedStringIO(self.memory_limit)
         self.stderr_funnel = LimitedStringIO(self.memory_limit)
 
@@ -175,7 +178,7 @@ class IOCage:
         Override `sys.stdout`, `sys.stdin` and `sys.stderr` to use
         `StringIO` instead to capture standard output & error.
         """
-        if not isinstance(sys.stdout, StringIO) ans self.enable_stdout:
+        if not isinstance(sys.stdout, StringIO) and self.enable_stdout:
             sys.stdout = self.stdout_funnel
         if not isinstance(sys.stderr, StringIO) and self.enable_stderr:
             sys.stderr = self.stderr_funnel
