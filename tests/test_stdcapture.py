@@ -183,19 +183,19 @@ class IOCageTests(unittest.TestCase):
         with captured:
             print("print2")
         self.assertEqual(captured.stdout, "print2\n")
-    
+
     def test_stdout_disable(self):
         captured = IOCage(enable_stdout=False)
 
         with captured:
             print("(test)")
-        
+
         self.assertEqual(captured.stdout, "")
-    
+
     def test_stderr_disable(self):
         captured = IOCage(enable_stderr=False)
 
         with captured:
             warnings.warn("Test")
-        
+
         self.assertEqual(captured.stdout, "")
