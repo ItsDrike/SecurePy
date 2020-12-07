@@ -1,7 +1,7 @@
 import sys
 import unittest
 
-from securepy.iocage import LimitedStringIO, MemoryOverflow, IOCage
+from securepy.iocage import IOCage, LimitedStringIO, MemoryOverflow
 
 
 class LimitedStringIOTests(unittest.TestCase):
