@@ -162,7 +162,7 @@ class IOCage:
 
     def override_std(self) -> None:
         """
-        Override `sys.stdout`, `stdin` and `sys.stderr` to use
+        Override `sys.stdout`, `sys.stdin` and `sys.stderr` to use
         `StringIO` instead to capture standard output & error.
         """
         if not isinstance(sys.stdout, StringIO):
