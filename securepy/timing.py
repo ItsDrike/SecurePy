@@ -3,7 +3,7 @@ import multiprocessing.pool
 import typing as t
 from functools import wraps
 
-from securepy.iocage import IOCage, LimitedStringIO
+from securepy.stdio import IOCage, LimitedStringIO
 
 
 class TimedFunctionError(Exception):

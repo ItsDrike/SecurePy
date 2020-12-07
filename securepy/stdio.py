@@ -214,6 +214,7 @@ def read_process_std(
     process: subprocess.Popen,
     read_chunk_size: int,
     max_size: int,
+    stdin: t.Optional[str] = None,
 ) -> t.Tuple[str, str]:
     """
     Start reading from STDOUT and STDERR, stop in case stdout limit is reached or process stops.

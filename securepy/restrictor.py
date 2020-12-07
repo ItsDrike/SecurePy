@@ -1,7 +1,7 @@
 import traceback
 import typing as t
 
-from securepy.iocage import IOCage
+from securepy.stdio import IOCage
 from securepy.security import RESTRICTED_GLOBALS, SAFE_GLOBALS
 from securepy.timing import CapturingTimedFunction
 
