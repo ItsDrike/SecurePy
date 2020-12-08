@@ -2,7 +2,7 @@ import sys
 import unittest
 import warnings
 
-from securepy import IOCage, LimitedStringIO, MemoryOverflow, read_process_std
+from securepy import IOCage, LimitedStringIO, MemoryOverflow
 
 
 class LimitedStringIOTests(unittest.TestCase):
