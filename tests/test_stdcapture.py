@@ -1,7 +1,6 @@
 import sys
 import unittest
 import warnings
-import subprocess
 
 from securepy import IOCage, LimitedStringIO, MemoryOverflow, read_process_std
 
@@ -218,8 +217,3 @@ class IOCageTests(unittest.TestCase):
         external.restore_std()
 
         self.assertEqual(captured.stdout, "")
-
-
-class ProcessStdTests(unittest.TestCase):
-    def test_stdout(self):
-        read_process_std(subprocess.Popen(['python', '-c', "print('hi there')"]), 100, 10000)

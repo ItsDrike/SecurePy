@@ -145,7 +145,7 @@ class IOCage:
         """
         @wraps(func)
         def inner(*args, **kwargs) -> t.Any:
-            return self.capture(func, args, kwargs, stdin)
+            return self.capture(func, args, kwargs)
         return inner
 
     def capture(self, func: t.Callable, args=None, kwargs=None, stdin: t.Optional[str] = None) -> t.Any:
