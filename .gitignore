@@ -31,3 +31,6 @@ TODO
 *.egg-info/
 dist/
 build/
+
+# Ignore repl.it related files
+.replit

@@ -32,15 +32,16 @@ class LimitedStringIO(StringIO):
         return f"<LimitedStringIO max_memory={self.max_memory}, value={self.getvalue()}>"
 
 
-class StdCapture:
+class IOCage:
     """
-    This class is used to capture STDOUT & STDERR of given
-    function, it can work as a wrapper, decorator or context manager.
+    This class is used to capture STDOUT and STDERR, while able to simulate STDIN
+    to given function it can work as a wrapper, decorator or context manager.
 
     Context Manager:
-        captured_std = StdCapture()
+        captured_std = IOCage(stdin='bye')  # `stdin` as a param to init. If not specified, `sys.stdin` will not be overrided
         with captured_std:
             print("hello")
+            print(input())  # Will print 'bye' to stdout
 
         captured_std.stdout  # <-- will contain the captured STDOUT (str)
 
@@ -48,13 +49,13 @@ class StdCapture:
         def foo(*args, **kwargs):
             print("hello")
 
-        captured_std = StdCapture()
-        captured_std.capture(foo, args=None, kwargs=None)
+        captured_std = IOCage()
+        captured_std.capture(foo, args=None, kwargs=None)  # Can pass `stdin` or it will default to value from init
 
         captured_std.stdout  # <-- will contain the captured STDOUT (str)
 
     Decorator:
-        captured_std = StdCapture()
+        captured_std = IOCage()
 
         @captured_std
         def foo(*args, **kwargs):
@@ -67,20 +68,33 @@ class StdCapture:
     You can also use captured_std.stderr to obtain captured STDERR.
 
     If you don't want to lose STDOUT/STDERR captured values after function is done running,
-    you can specify `auto_reset=False` on init and run `StdCapture.reset` manually when needed.
+    you can specify `auto_reset=False` on init and run `IOCage.reset` manually when needed.
     You can also specify `memory_limit=100_000` in bytes (100kB) which will limit saved
     std storage size to that amount.
     """
 
-    def __init__(self, auto_reset: bool = True, memory_limit: int = 100_000):
+    def __init__(
+        self,
+        auto_reset: bool = True,
+        memory_limit: int = 100_000,
+        stdin: t.Optional[str] = None,
+        enable_stdout: bool = True,
+        enable_stderr: bool = True,
+    ):
         self.auto_reset = auto_reset
         self.memory_limit = memory_limit
 
-        self.capturing_stdout = LimitedStringIO(self.memory_limit)
-        self.capturing_stderr = LimitedStringIO(self.memory_limit)
+        self.stdin = stdin
+
+        self.enable_stdout = enable_stdout
+        self.enable_stderr = enable_stderr
+
+        self.stdout_funnel = LimitedStringIO(self.memory_limit)
+        self.stderr_funnel = LimitedStringIO(self.memory_limit)
 
         self.old_stdout = sys.stdout
         self.old_stderr = sys.stderr
+        self.old_stdin = sys.stdin
 
     @property
     def stdout(self) -> str:
@@ -88,7 +102,7 @@ class StdCapture:
         Return captured STDOUT in form of string. This will
         return empty string in case no STDOUT was captured.
         """
-        return self.capturing_stdout.getvalue()
+        return self.stdout_funnel.getvalue()
 
     @property
     def stderr(self) -> str:
@@ -96,15 +110,15 @@ class StdCapture:
         Return captured STDERR in form of string. This will
         return empty string in case no STDERR was captured.
         """
-        return self.capturing_stderr.getvalue()
+        return self.stderr_funnel.getvalue()
 
     def __enter__(self) -> None:
         """
-        Temporarely override `sys.stdout` and `sys.stderr`
-        to use `StringIO` to capture standard output & error.
+        Temporarely override `sys.stdout`, `sys.stdin` and `sys.stderr`
+        to use `LimitedStringIO` to capture standard output & error.
 
         Captured STDOUT/STDERR can be obtained by accessing
-        `StdCapture.stdout`/`StdCapture.stderr`.
+        `IOCage.stdout`/`IOCage.stderr`.
         """
         if self.auto_reset:
             self.reset()
@@ -113,20 +127,20 @@ class StdCapture:
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         """
-        Restore the normal printing STDOUT/STDERR capabilities.
+        Restore the normal STDOUT/STDERR/STDIN capabilities.
         """
         self.restore_std()
 
     def __call__(self, func: t.Callable) -> t.Any:
         """
         This decorates given `func` and captures it's STDOUT/STDERR
-        when it's run.
-        Return value will be the original return from `func`.
+        while simulating it's STDIN, if `self.stdin` is set.
+        Return value will be the original return from `func`
 
         STDOUT & STDERR will be captured and can be obtained by doing
-        `StdCapture.stdout`/`StdCapture.stderr`.
+        `IOCage.stdout`/`IOCage.stderr`.
 
-        The functionality is handeled in `StdCapture.capture`, this method
+        The functionality is handeled in `IOCage.capture`, this method
         serves only as a decorator for given `func`.
         """
         @wraps(func)
@@ -134,21 +148,26 @@ class StdCapture:
             return self.capture(func, args, kwargs)
         return inner
 
-    def capture(self, func: t.Callable, args=None, kwargs=None) -> t.Any:
+    def capture(self, func: t.Callable, args=None, kwargs=None, stdin: t.Optional[str] = None) -> t.Any:
         """
-        This runs given `func` while capturing it's STDOUT/STDERR.
+        This runs given `func` while capturing it's STDOUT/STDERR
+        and simulating it's STDIN.
         Return value will be the original return from `func`.
 
         STDOUT & STDERR will be captured and can be obtained by doing
-        `StdCapture.stdout`/`StdCapture.stderr`.
+        `IOCage.stdout`/`IOCage.stderr`.
 
         This acts as a wrapper for given `func`, it immediately runs it,
         (if you want to decorate, call instance directly - `__call__`)
         """
+        old_stdin = self.stdin
+
         if args is None:
             args = tuple()
         if kwargs is None:
             kwargs = dict()
+        if stdin is not None:
+            self.stdin = stdin
 
         if self.auto_reset:
             self.reset()
@@ -156,15 +175,19 @@ class StdCapture:
         with self:
             return func(*args, **kwargs)
 
+        self.stdin = old_stdin
+
     def override_std(self) -> None:
         """
-        Override `sys.stdout` and `sys.stderr` to use
+        Override `sys.stdout`, `sys.stdin` and `sys.stderr` to use
         `StringIO` instead to capture standard output & error.
         """
-        if not isinstance(sys.stdout, StringIO):
-            sys.stdout = self.capturing_stdout
-        if not isinstance(sys.stderr, StringIO):
-            sys.stderr = self.capturing_stderr
+        if not isinstance(sys.stdout, StringIO) and self.enable_stdout:
+            sys.stdout = self.stdout_funnel
+        if not isinstance(sys.stderr, StringIO) and self.enable_stderr:
+            sys.stderr = self.stderr_funnel
+        if not isinstance(sys.stdin, StringIO) and self.stdin:
+            sys.stdin = StringIO(self.stdin)
 
     def restore_std(self) -> None:
         """
@@ -175,14 +198,16 @@ class StdCapture:
             sys.stdout = self.old_stdout
         if isinstance(sys.stderr, LimitedStringIO):
             sys.stderr = self.old_stderr
+        if isinstance(sys.stdin, StringIO):
+            sys.stdin = self.old_stdin
 
     def reset(self) -> None:
         """Reset stored captured stdout & stderr strings."""
-        self.capturing_stdout = LimitedStringIO(self.memory_limit)
-        self.capturing_stderr = LimitedStringIO(self.memory_limit)
+        self.stdout_funnel = LimitedStringIO(self.memory_limit)
+        self.stderr_funnel = LimitedStringIO(self.memory_limit)
 
     def __repr__(self) -> str:
-        return f"<StdCapture(stdout={self.stdout}, stderr={self.stderr})"
+        return f"<IOCage(stdout={self.stdout}, stderr={self.stderr})"
 
 
 def read_process_std(
