@@ -15,7 +15,7 @@ class Restrictor:
         max_exec_time: int = 3,
         max_std_memory: int = 100_000,
         restriction_scope: t.Literal[1, 2, 3] = 2,
-        stdin=None,
+        stdin: t.Optional[str] = None,
         enable_stdout: bool = True,
         enable_stderr: bool = True,
     ):
