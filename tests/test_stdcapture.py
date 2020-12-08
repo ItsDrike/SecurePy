@@ -1,9 +1,9 @@
 import sys
 import unittest
 import warnings
-# import subprocess
+import subprocess
 
-from securepy import IOCage, LimitedStringIO, MemoryOverflow  # , read_process_std
+from securepy import IOCage, LimitedStringIO, MemoryOverflow, read_process_std
 
 
 class LimitedStringIOTests(unittest.TestCase):
@@ -222,4 +222,4 @@ class IOCageTests(unittest.TestCase):
 
 class ProcessStdTests(unittest.TestCase):
     def test_stdout(self):
-        pass
+        read_process_std(subprocess.Popen(['python', '-c', "print('hi there')"]), 100, 10000)
