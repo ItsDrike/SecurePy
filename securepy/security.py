@@ -50,9 +50,9 @@ SAFE_DUNDERS = [
     "__build_class__", "__name__"
 ]
 
-SAFE_GLOBAL_SCOPE = SAFE_TYPES + SAFE_FUNCTIONS + SAFE_EXCEPTIONS + SAFE_DUNDERS
+SAFE_BUILTINS = SAFE_TYPES + SAFE_FUNCTIONS + SAFE_EXCEPTIONS + SAFE_DUNDERS
 
-UNSAFE_GLOBAL_SCOPE = [
+UNSAFE_BUILTINS = [
     "dir",  # General purpose introspector
     "compile",  # don't allow producing new code
     # Unsafe access to namespace
@@ -79,20 +79,30 @@ OVERRIDDEN_VALUES = {
 }
 
 
-SAFE_BUILTINS = {}
-for name in SAFE_GLOBAL_SCOPE:
-    SAFE_BUILTINS[name] = getattr(builtins, name)
+# Build global scopes
+BASE_GLOBALS = {"__builtins__": {}}
+UNRESTRICTED_GLOBALS = {"__builtins__": builtins}
+
+SAFE_GLOBALS = BASE_GLOBALS.copy()
+for name in SAFE_BUILTINS:
+    SAFE_GLOBALS["__builtins__"][name] = getattr(builtins, name)
 for name, reference in OVERRIDDEN_VALUES.items():
-    SAFE_BUILTINS[name] = reference
+    SAFE_GLOBALS["__builtins__"][name] = reference
 
-RESTRICTED_BUILTINS = {}
+RESTRICTED_GLOBALS = BASE_GLOBALS.copy()
 for builtin, reference in vars(builtins).items():
-    if builtin not in UNSAFE_GLOBAL_SCOPE:
-        RESTRICTED_BUILTINS[builtin] = reference
-
-UNRESTRICTED_BUILTINS = vars(builtins)
+    if builtin not in UNSAFE_BUILTINS:
+        RESTRICTED_GLOBALS["__builtins__"][builtin] = reference
 
 
-SAFE_GLOBALS = {"__builtins__": SAFE_BUILTINS}
-RESTRICTED_GLOBALS = {"__builtins__": RESTRICTED_BUILTINS}
-UNRESTRICTED_GLOBALS = {"__builtins__": UNRESTRICTED_BUILTINS}
+def get_globals(restriction_level: int) -> dict:
+    if restriction_level == 0:
+        return UNRESTRICTED_GLOBALS
+    elif restriction_level == 1:
+        return RESTRICTED_GLOBALS
+    elif restriction_level == 2:
+        return SAFE_GLOBALS
+    elif restriction_level == 3:
+        return BASE_GLOBALS
+    else:
+        raise RuntimeError(f"Invalid `restriction_level` ({restriction_level}), valid values: 0-3.")
