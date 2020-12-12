@@ -1,7 +1,3 @@
-import sys
-
-from security import get_globals
-
 """
 This file will be run in subprocess and it's where the true code
 execution is happening.
@@ -11,7 +7,16 @@ the code that will be executed and the restriction level
 
 Example usage:
     `python securepy/executor.py [restriction_level] [code]`
+
+This also means that it will assume root of securepy/ hence
+the imports specified here won't need the `import securepy.module`
+but will instead only use `import module`.
 """
+
+import sys
+
+from security import get_globals
+
 
 if __name__ == "__main__":
     try:
