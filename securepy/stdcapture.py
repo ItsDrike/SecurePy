@@ -209,9 +209,8 @@ def read_process_std(
         stderr.append(chars)
 
         if output_size > max_size:
-            print("Output exceeded stdout limit, terminating NsJail with SIGKILL")
             process.kill()
-            break
+            raise MemoryOverflow(output_size, max_size, "Terminating subprocess.Popen with SIGKILL")
 
     # Wait for process termination
     process.wait()
