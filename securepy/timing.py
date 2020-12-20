@@ -45,7 +45,7 @@ class TimedFunction:
     you'll need to subclass and override `_capture_return` method and `_value_return`.
     """
 
-    def __init__(self, time_limit: int):
+    def __init__(self, time_limit: t.Union[float, int]):
         self.time_limit = time_limit
 
     def _capture_wrapper(self, func: t.Callable) -> t.Callable:
@@ -132,7 +132,7 @@ class TimedFunction:
             return self.run_timed(func, args, kwargs)
         return inner
 
-    def run_timed(self, func: t.Callable, args=None, kwargs=None) -> None:
+    def run_timed(self, func: t.Callable, args=None, kwargs=None) -> t.Any:
         """
         This is the method which actually handles the logic of running the given
         `func` for some specified time limit, using passed `args` and `kwargs` as
