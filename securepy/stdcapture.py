@@ -185,28 +185,23 @@ class StdCapture:
         return f"<StdCapture(stdout={self.stdout}, stderr={self.stderr})"
 
 
-def read_process_std(
+def read_process_output(
     process: subprocess.Popen,
     read_chunk_size: int,
     max_size: int,
-) -> t.Tuple[str, str]:
+) -> str:
     """
-    Start reading from STDOUT and STDERR, stop in case stdout limit is reached or process stops.
+    Start reading from STDOUT, stop in case stdout limit is reached or process stops.
 
     In case output from STDOUT will reach the max limit, the subprocess will be terminated by SIGKILL.
     """
     output_size = 0
     stdout = []
-    stderr = []
 
     while process.poll() is None:
-        chars = process.stdout.read(read_chunk_size)
-        output_size += sys.getsizeof(chars)
-        stdout.append(chars)
-
-        chars = process.stderr.read(read_chunk_size)
-        output_size += sys.getsizeof(chars)
-        stderr.append(chars)
+        stdout_chars = process.stdout.read(read_chunk_size)
+        output_size += sys.getsizeof(stdout_chars)
+        stdout.append(stdout_chars)
 
         if output_size > max_size:
             process.kill()
@@ -214,4 +209,4 @@ def read_process_std(
 
     # Wait for process termination
     process.wait()
-    return "".join(stdout), "".join(stderr)
+    return "".join(stdout)
