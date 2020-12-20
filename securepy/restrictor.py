@@ -1,75 +1,66 @@
-import traceback
+import subprocess
 import typing as t
 
-from securepy.security import RESTRICTED_GLOBALS, SAFE_GLOBALS
-from securepy.stdcapture import StdCapture
-from securepy.timing import CapturingTimedFunction
+from securepy.stdcapture import read_process_output
 
 
 class Restrictor:
-    """
-    Prepare isolated python exec session
-    """
-    def __init__(self, max_exec_time: int, max_std_memory: int = 100_000, restriction_scope: t.Literal[1, 2, 3] = 2):
+    def __init__(
+        self,
+        max_exec_time: int,
+        restriction_scope: t.Literal[1, 2, 3] = 2,
+        max_process_memory: int = 5_000_000,  # 5MB
+        max_output_memory: int = 10_000,  # 100kB
+        output_chunk_read_size: int = 10_000,  # characters (bytes)
+        python_path: str = "python"  # default to `python` in PATH
+    ):
         """
-        `restriction_level` will determine how restricted will the
+        `max_exec_time` is the maximum time limit in seconds for which exec function
+        will be allowed to run. After this timelimit ends, exec will be terminated
+        and `TimeoutError` will be raised.
+
+        `restriction_scope` will determine how restricted will the
         python code execution be. Restriction levels are as follows:
         - 0: Unrestricted globals (full builtins as they are in this file)
         - 1: Restricted globals (removed some unsafe builtins)
         - 2 (RECOMMENDED): Secure globals (only using relatively safe builtins)
         - 3: No globals (very limiting but quite safe)
-        `max_exec_time` is the maximum time limit in seconds for which exec function
-        will be allowed to run. After this timelimit ends, exec will be terminated
-        and `TimeoutError` will be raised.
+
+        `max_process_memory` is the total amount of allowed memory single exec process can
+        use. Exceeding this will raise `MemoryOverflow`
+
+        `max_output_memory` is the maximum allowed memory for STDOUT/STDERR of the process.
+        Exceeding this amount will raise `MemoryOverflow`
+
+        `std_chunk_read_size` is the size (amount of characters) in bytes which will be used
+        to read the single output chunk from given process, which will then be added to rest of
+        the STDOUT/STDERR.
+
+        `python_path` is the path to python interpreter file which will be called to run the
+        specified code.
         """
         self.max_exec_time = max_exec_time
         self.restriction_scope = restriction_scope
-        self._set_global_scope(self.restriction_scope)
+        self.max_process_memory = max_process_memory
+        self.max_output_memory = max_output_memory
+        self.output_chunk_read_size = output_chunk_read_size
+        self.python_path = python_path
 
-        self.stdcapture = StdCapture(memory_limit=max_std_memory)
-        self.timed_exec = CapturingTimedFunction(self.max_exec_time, self.stdcapture)
+    def execute(self, code: str) -> str:
+        process = subprocess.Popen(
+            [
+                self.python_path, "securepy/executor.py",
+                str(self.restriction_scope), code
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True
+        )
 
-    def _set_global_scope(self, restriction_scope: t.Literal[1, 2, 3]):
-        """
-        Override builtins in global scope based on given restriction_scope.
-        Restriction levels are as follows:
-        - 0: Unrestricted globals (full builtins as they are in this file)
-        - 1: Restricted globals (removed some unsafe builtins)
-        - 2 (RECOMMENDED): Secure globals (only using relatively safe builtins)
-        - 3: No globals (very limiting but quite safe)
-        - 3: No globals (very limiting but quite safe)
-        """
-        if restriction_scope == 0:
-            self.globals = {"__builtins__": globals()["__builtins__"]}
-        elif restriction_scope == 1:
-            self.globals = RESTRICTED_GLOBALS
-        elif restriction_scope == 2:
-            self.globals = SAFE_GLOBALS
-        elif restriction_scope == 3:
-            self.globals = {"__builtins__": {}}
-        else:
-            raise TypeError("`restriction_scope` must be a literal value: 0, 1, 2 or 3.")
+        out = read_process_output(
+            process,
+            self.output_chunk_read_size,
+            self.max_output_memory,
+        )
 
-    def execute(self, code: str) -> t.Tuple[t.Optional[str], t.Optional[BaseException]]:
-        """
-        Securely execute given `code` securely with specified time-limit
-        and using chosen globals (in __init__). Any stdout coming out from
-        this program will get captured and returned, in case an error occurs
-        it will be returned as second element of the return tuple.
-
-        Return: (`stdout`, `raised exception`)
-        """
-        exception = None
-
-        wrapped = self.timed_exec(lambda code, globals: exec(code, globals))
-        try:
-            wrapped(code, self.globals)
-        except BaseException as exc:
-            exception = exc
-            caught_traceback = traceback.format_exc()
-            exception.traceback = caught_traceback
-
-        stdout = self.stdcapture.stdout
-        self.stdcapture.reset()
-
-        return stdout, exception
+        return out
