@@ -1,7 +1,8 @@
 import sys
 import unittest
+import warnings
 
-from securepy.stdcapture import LimitedStringIO, MemoryOverflow, StdCapture
+from securepy import IOCage, LimitedStringIO, MemoryOverflow
 
 
 class LimitedStringIOTests(unittest.TestCase):
@@ -40,12 +41,12 @@ class LimitedStringIOTests(unittest.TestCase):
                         self.assertEqual(e.used_memory, test_memory)
 
 
-class StdCaptureTests(unittest.TestCase):
+class IOCageTests(unittest.TestCase):
     """Tests for the STDOUT/STDERR capturing."""
 
     def test_manual_capture(self):
         _original_stdout = sys.stdout
-        captured = StdCapture()
+        captured = IOCage()
 
         captured.override_std()
         print("hello")
@@ -54,9 +55,9 @@ class StdCaptureTests(unittest.TestCase):
         self.assertIs(sys.stdout, _original_stdout)
 
     def test_context_manager(self):
-        """Make sure context manager implementation of StdCapture works."""
+        """Make sure context manager implementation of IOCage works."""
         _original_stdout = sys.stdout
-        captured = StdCapture()
+        captured = IOCage()
 
         with captured:
             self.assertIsNot(sys.stdout, _original_stdout)
@@ -66,9 +67,9 @@ class StdCaptureTests(unittest.TestCase):
         self.assertIs(sys.stdout, _original_stdout)
 
     def test_decorator(self):
-        """Make sure context manager implementation of StdCapture works."""
+        """Make sure context manager implementation of IOCage works."""
         _original_stdout = sys.stdout
-        captured = StdCapture()
+        captured = IOCage()
 
         @captured
         def foo():
@@ -81,9 +82,9 @@ class StdCaptureTests(unittest.TestCase):
         self.assertIs(sys.stdout, _original_stdout)
 
     def test_decorator_arguments(self):
-        """Make sure context manager implementation of StdCapture works."""
+        """Make sure context manager implementation of IOCage works."""
         _original_stdout = sys.stdout
-        captured = StdCapture()
+        captured = IOCage()
 
         @captured
         def foo(my_string, my_kwarg="default"):
@@ -96,9 +97,9 @@ class StdCaptureTests(unittest.TestCase):
         self.assertIs(sys.stdout, _original_stdout)
 
     def test_wrapper(self):
-        """Make sure context manager implementation of StdCapture works."""
+        """Make sure context manager implementation of IOCage works."""
         _original_stdout = sys.stdout
-        captured = StdCapture()
+        captured = IOCage()
 
         def foo():
             self.assertIsNot(sys.stdout, _original_stdout)
@@ -111,7 +112,7 @@ class StdCaptureTests(unittest.TestCase):
 
     def test_wrapper_arguments(self):
         _original_stdout = sys.stdout
-        captured = StdCapture()
+        captured = IOCage()
 
         def foo(my_string, my_kwarg="default"):
             self.assertIsNot(sys.stdout, _original_stdout)
@@ -131,7 +132,7 @@ class StdCaptureTests(unittest.TestCase):
 
         for test_prints in test_cases:
             with self.subTest(test_prints=test_prints):
-                capture = StdCapture()
+                capture = IOCage()
 
                 with capture:
                     for test_print in test_prints:
@@ -143,7 +144,7 @@ class StdCaptureTests(unittest.TestCase):
                 self.assertEqual(capture.stdout, expected_stdout)
 
     def test_auto_reset(self):
-        captured = StdCapture(auto_reset=True)
+        captured = IOCage(auto_reset=True)
 
         with captured:
             print("print1")
@@ -154,7 +155,7 @@ class StdCaptureTests(unittest.TestCase):
         self.assertEqual(captured.stdout, "print2\n")
 
     def test_no_auto_reset(self):
-        captured = StdCapture(auto_reset=False)
+        captured = IOCage(auto_reset=False)
 
         with captured:
             print("print1")
@@ -165,7 +166,7 @@ class StdCaptureTests(unittest.TestCase):
         self.assertEqual(captured.stdout, "print1\nprint2\n")
 
     def test_manual_reset(self):
-        captured = StdCapture(auto_reset=False)
+        captured = IOCage(auto_reset=False)
 
         with captured:
             print("print1")
@@ -176,3 +177,43 @@ class StdCaptureTests(unittest.TestCase):
         with captured:
             print("print2")
         self.assertEqual(captured.stdout, "print2\n")
+
+    def test_stdin(self):
+        captured = IOCage(stdin="hello\nthere")
+
+        captured.override_std()
+
+        print(input())
+        print(input())
+
+        captured.restore_std()
+
+        self.assertEqual(captured.stdout, "hello\nthere\n")
+
+    def test_stdout_disable(self):
+        captured = IOCage(enable_stdout=False)
+        external = IOCage()
+
+        external.override_std()
+        captured.override_std()
+
+        print("(test)")
+
+        captured.restore_std()
+        external.restore_std()
+
+        self.assertEqual(captured.stdout, "")
+
+    def test_stderr_disable(self):
+        captured = IOCage(enable_stderr=False)
+        external = IOCage()
+
+        external.override_std()
+        captured.override_std()
+
+        warnings.warn("Test")
+
+        captured.restore_std()
+        external.restore_std()
+
+        self.assertEqual(captured.stdout, "")

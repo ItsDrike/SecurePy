@@ -1,7 +1,7 @@
 import subprocess
 import typing as t
 
-from securepy.stdcapture import read_process_output
+from securepy.stdio import read_process_output
 
 
 class Restrictor:
