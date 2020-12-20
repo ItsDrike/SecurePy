@@ -54,7 +54,7 @@ class IOCage:
             print("hello")
 
         captured_std = IOCage()
-        captured_std.capture(foo, args=None, kwargs=None)  # Can pass `stdin` or it will default to value from init
+        captured_std.capture(foo, args=None, kwargs=None)
 
         captured_std.stdout  # <-- will contain the captured STDOUT (str)
 
@@ -88,13 +88,12 @@ class IOCage:
         self.auto_reset = auto_reset
         self.memory_limit = memory_limit
 
-        self.stdin = stdin
-
         self.enable_stdout = enable_stdout
         self.enable_stderr = enable_stderr
 
         self.stdout_funnel = LimitedStringIO(self.memory_limit)
         self.stderr_funnel = LimitedStringIO(self.memory_limit)
+        self.stdin_funnel = StringIO(stdin) if stdin else None
 
         self.old_stdout = sys.stdout
         self.old_stderr = sys.stderr
@@ -115,6 +114,10 @@ class IOCage:
         return empty string in case no STDERR was captured.
         """
         return self.stderr_funnel.getvalue()
+
+    def set_stdin(self, stdin: t.Optional[str]) -> None:
+        """Set new STDIN string to be used."""
+        self.stdin_funnel = StringIO(stdin) if stdin else None
 
     def __enter__(self) -> None:
         """
@@ -152,7 +155,7 @@ class IOCage:
             return self.capture(func, args, kwargs)
         return inner
 
-    def capture(self, func: t.Callable, args=None, kwargs=None, stdin: t.Optional[str] = None) -> t.Any:
+    def capture(self, func: t.Callable, args=None, kwargs=None) -> t.Any:
         """
         This runs given `func` while capturing it's STDOUT/STDERR
         and simulating it's STDIN.
@@ -164,22 +167,16 @@ class IOCage:
         This acts as a wrapper for given `func`, it immediately runs it,
         (if you want to decorate, call instance directly - `__call__`)
         """
-        old_stdin = self.stdin
-
         if args is None:
             args = tuple()
         if kwargs is None:
             kwargs = dict()
-        if stdin is not None:
-            self.stdin = stdin
 
         if self.auto_reset:
             self.reset()
 
         with self:
             return func(*args, **kwargs)
-
-        self.stdin = old_stdin
 
     def override_std(self) -> None:
         """
@@ -190,8 +187,8 @@ class IOCage:
             sys.stdout = self.stdout_funnel
         if not isinstance(sys.stderr, StringIO) and self.enable_stderr:
             sys.stderr = self.stderr_funnel
-        if not isinstance(sys.stdin, StringIO) and self.stdin:
-            sys.stdin = StringIO(self.stdin)
+        if not isinstance(sys.stdin, StringIO) and self.stdin_funnel is not None:
+            sys.stdin = self.stdin_funnel
 
     def restore_std(self) -> None:
         """

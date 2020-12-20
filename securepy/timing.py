@@ -180,15 +180,15 @@ class TimedFunction:
         return self._value_return(ret_info, func)
 
 
-class CapturingTimedFunction(TimedFunction):
+class IOTimedFunction(TimedFunction):
     """
     This overrides `TimedFunction` in order to provide the ability to
-    capture STDOUT/STDERR of given function using `securepy.IOCage.IOCage`.
+    capture STDOUT/STDERR of given function using `securepy.stdio.IOCage`.
     """
 
-    def __init__(self, time_limit: int, std_capture: IOCage):
+    def __init__(self, time_limit: int, io_cage: IOCage):
         super().__init__(time_limit)
-        self.std_capture = std_capture
+        self.io_cage = io_cage
         raise DeprecationWarning("This class is deprecated, it might cause issues with multiprocessing.")
 
     def _capture_return(self, func: t.Callable, *args, **kwargs) -> t.Tuple[t.Literal["exc", "ret"], t.Any, LimitedStringIO, LimitedStringIO]:
@@ -197,15 +197,15 @@ class CapturingTimedFunction(TimedFunction):
         include the StrionIO objects which contains the STDOUT/STDERR.
         """
         header, ret = super()._capture_return(func, *args, **kwargs)
-        return (header, ret, self.std_capture.capturing_stdout, self.std_capture.capturing_stderr)
+        return (header, ret, self.io_cage.stdout_funnel, self.io_cage.stderr_funnel)
 
     def _value_return(self, ret_info: t.Tuple[t.Literal["exc", "ret"], t.Any, LimitedStringIO, LimitedStringIO], func: t.Callable) -> t.Any:
         """
         Override returning of values in order to save the obtained
         LimitedStringIO objects which contains the STDOUT/STDERR.
         """
-        self.std_capture.capturing_stdout = ret_info[2]
-        self.std_capture.capturing_stderr = ret_info[3]
+        self.io_cage.stdout_funnel = ret_info[2]
+        self.io_cage.stderr_funnel = ret_info[3]
 
         return super()._value_return((ret_info[0], ret_info[1]), func)
 
@@ -217,6 +217,6 @@ class CapturingTimedFunction(TimedFunction):
         """
         @wraps(func)
         def inner(*args, **kwargs) -> None:
-            std_capturing_func = self.std_capture(func)
+            std_capturing_func = self.io_cage(func)
             return self.run_timed(std_capturing_func, args, kwargs)
         return inner
