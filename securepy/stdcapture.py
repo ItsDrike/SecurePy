@@ -7,10 +7,14 @@ from io import StringIO
 
 class MemoryOverflow(Exception):
     def __init__(self, used_memory: int, max_memory: int, message: t.Optional[str] = None, *args, **kwargs) -> None:
+        if not message:
+            message = "Maximum STDOUT/STDERR memory surpassed"
+        message += f"({used_memory} > {max_memory})"
+
         self.used_memory = used_memory
         self.max_memory = max_memory
-        if not message:
-            message = f"Maximum STDOUT/STDERR memory surpassed ({used_memory} > {max_memory})"
+        self.message = message
+
         super().__init__(message, *args, **kwargs)
 
 
