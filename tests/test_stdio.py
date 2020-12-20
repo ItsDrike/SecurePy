@@ -228,6 +228,6 @@ class IOCageTests(unittest.TestCase):
                 warnings.warn("Test")
 
         self.assertEqual(internal.stderr, "")
-        self.assertEqual(external.stderr, "")
+        self.assertIn('warnings.warn("Test")', external.stderr)
 
     # endregion
