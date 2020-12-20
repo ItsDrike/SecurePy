@@ -42,7 +42,7 @@ class IOCage:
     to given function it can work as a wrapper, decorator or context manager.
 
     Context Manager:
-        captured_std = IOCage(stdin='bye')  # `stdin` as a param to init. If not specified, `sys.stdin` will not be overrided
+        captured_std = IOCage(stdin='bye')  # `stdin` as a param to init. If not specified, STDIN won't be simulated.
         with captured_std:
             print("hello")
             print(input())  # Will print 'bye' to stdout
