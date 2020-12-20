@@ -7,10 +7,10 @@ from securepy.stdio import read_process_output
 class Restrictor:
     def __init__(
         self,
-        max_exec_time: int,
+        max_exec_time: t.Union[float, int],
         restriction_scope: t.Literal[1, 2, 3] = 2,
         max_process_memory: int = 5_000_000,  # 5MB
-        max_output_memory: int = 10_000,  # 100kB
+        max_output_memory: int = 100_000,  # 100kB
         output_chunk_read_size: int = 10_000,  # characters (bytes)
         python_path: str = "python"  # default to `python` in PATH
     ):
