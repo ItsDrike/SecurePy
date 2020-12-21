@@ -7,10 +7,17 @@ from io import StringIO
 
 
 class MemoryOverflow(Exception):
-    def __init__(self, used_memory: int, max_memory: int, message: t.Optional[str] = None, *args, **kwargs) -> None:
+    def __init__(
+        self,
+        message: t.Optional[str] = None,
+        used_memory: t.Optional[int] = None,
+        max_memory: t.Optional[int] = None,
+        *args, **kwargs
+    ) -> None:
         if not message:
             message = "Maximum STDOUT/STDERR memory surpassed"
-        message += f"({used_memory} > {max_memory})"
+        if used_memory is not None and max_memory is not None:
+            message += f"({used_memory} > {max_memory})"
 
         self.used_memory = used_memory
         self.max_memory = max_memory
@@ -31,7 +38,7 @@ class LimitedStringIO(StringIO):
         if used_memory <= self.max_memory:
             return super().write(__s)
         else:
-            raise MemoryOverflow(used_memory, self.max_memory)
+            raise MemoryOverflow(used_memory=used_memory, max_memory=self.max_memory)
 
     def __repr__(self) -> str:
         return f"<LimitedStringIO max_memory={self.max_memory}, value={self.getvalue()}>"
@@ -238,11 +245,11 @@ def read_process_output(
 
         if max_size is not None and output_size > max_size:
             process.kill()
-            raise MemoryOverflow(output_size, max_size, "Terminating subprocess.Popen with SIGKILL")
+            raise MemoryOverflow("Terminated subprocess.Popen with SIGKILL", output_size, max_size)
 
         if max_exec_time is not None and time.time() - start > max_exec_time:
             process.kill()
-            raise TimeoutError(f"Terminating subprocess.Popen with SIGKILL (surpassed maximum time for execution: {max_exec_time})")
+            raise TimeoutError(f"Terminated subprocess.Popen with SIGKILL (surpassed maximum time for execution: {max_exec_time})")
 
     # Wait for process termination
     process.wait()
