@@ -7,11 +7,11 @@ from securepy.stdio import read_process_output
 class Restrictor:
     def __init__(
         self,
-        max_exec_time: t.Union[float, int],
         restriction_scope: t.Literal[1, 2, 3] = 2,
-        max_process_memory: int = 5_000_000,  # 5MB
-        max_output_memory: int = 100_000,  # 100kB
-        output_chunk_read_size: int = 10_000,  # characters (bytes)
+        max_exec_time: t.Optional[t.Union[float, int]] = None,  # (seconds)
+        max_process_memory: t.Optional[int] = 5_000_000,  # 5MB
+        max_output_memory: t.Optional[int] = 100_000,  # 100kB
+        output_chunk_read_size: int = 1_000,  # characters (bytes)
         python_path: str = "python"  # default to `python` in PATH
     ):
         """
@@ -26,11 +26,13 @@ class Restrictor:
         - 2 (RECOMMENDED): Secure globals (only using relatively safe builtins)
         - 3: No globals (very limiting but quite safe)
 
-        `max_process_memory` is the total amount of allowed memory single exec process can
-        use. Exceeding this will raise `MemoryOverflow`
+        `max_process_memory` is the total amount of allowed RAM memory single exec process
+        canuse. Exceeding this will raise `MemoryOverflow`. In case it's `None`, process
+        will run without RAM limitation.
 
         `max_output_memory` is the maximum allowed memory for STDOUT/STDERR of the process.
-        Exceeding this amount will raise `MemoryOverflow`
+        Exceeding this amount will raise `MemoryOverflow`. In case it's `None`, process
+        will run without STDOUT/STDERR memory limitation.
 
         `std_chunk_read_size` is the size (amount of characters) in bytes which will be used
         to read the single output chunk from given process, which will then be added to rest of
@@ -61,6 +63,7 @@ class Restrictor:
             process,
             self.output_chunk_read_size,
             self.max_output_memory,
+            self.max_exec_time
         )
 
         return out
