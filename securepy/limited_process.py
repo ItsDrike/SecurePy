@@ -49,7 +49,7 @@ class LimitedProcess(subprocess.Popen):
     def __init__(
         self,
         args: _CMD,
-        max_output_size: int,
+        max_output_size: t.Optional[int],
         read_chunk_size: int,
         **kwargs
     ) -> None:
@@ -72,7 +72,7 @@ class LimitedProcess(subprocess.Popen):
             if not out:  # "" or None
                 break
 
-            if self.output_size > self.max_output_size:
+            if self.max_output_size is not None and self.output_size > self.max_output_size:
                 fh.close()
                 raise MemoryOverflow(
                     used_memory=self.output_size,
