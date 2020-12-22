@@ -10,7 +10,7 @@ class Restrictor:
         self,
         restriction_scope: t.Literal[1, 2, 3] = 2,
         max_exec_time: t.Optional[t.Union[float, int]] = None,  # (seconds)
-        max_process_memory: t.Optional[int] = 5_000_000,  # 5MB
+        max_process_memory: t.Optional[int] = 5 * 1024 * 1024,  # 10 MB
         max_output_memory: t.Optional[int] = 100_000,  # 100kB
         output_chunk_read_size: int = 1_000,  # characters (bytes)
         python_path: str = "python"  # default to `python` in PATH
@@ -44,7 +44,7 @@ class Restrictor:
         """
         self.max_exec_time = max_exec_time
         self.restriction_scope = restriction_scope
-        self.max_process_memory = max_process_memory
+        self.max_process_memory = max_process_memory if max_process_memory is not None else -1
         self.max_output_memory = max_output_memory
         self.output_chunk_read_size = output_chunk_read_size
         self.python_path = python_path
@@ -52,7 +52,7 @@ class Restrictor:
     def execute(self, code: str) -> subprocess.CompletedProcess:
         args = [
             self.python_path, "securepy/executor.py",
-            str(self.restriction_scope), code
+            str(self.restriction_scope), str(self.max_process_memory), code
         ]
 
         process = LimitedProcess(
