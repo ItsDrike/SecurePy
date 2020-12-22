@@ -15,7 +15,7 @@ but will instead only use `import module`.
 
 import sys
 
-from security import get_globals
+from security import get_safe_globals
 
 
 if __name__ == "__main__":
@@ -27,4 +27,4 @@ if __name__ == "__main__":
     except ValueError:
         raise RuntimeError("Warning, some arguments aren't correct.")
 
-    exec(code, get_globals(restriction_level), {})
+    exec(code, get_safe_globals(restriction_level))

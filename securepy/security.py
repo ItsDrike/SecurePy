@@ -96,7 +96,14 @@ for builtin, reference in vars(builtins).items():
         RESTRICTED_GLOBALS["__builtins__"][builtin] = reference
 
 
-def get_globals(restriction_level: int) -> dict:
+def get_safe_globals(restriction_level: int) -> dict:
+    """
+    Get secure globals based on given restriction level:
+    - 0: Unrestricted globals (full builtins as they are in this file)
+    - 1: Restricted globals (removed some unsafe builtins)
+    - 2 (RECOMMENDED): Secure globals (only using relatively safe builtins)
+    - 3: No globals (very limiting but quite safe)
+    """
     if restriction_level == 0:
         return deepcopy(UNRESTRICTED_GLOBALS)
     elif restriction_level == 1:

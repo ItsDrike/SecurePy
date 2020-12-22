@@ -1,7 +1,7 @@
 import securepy.config.config as _conf
 from securepy.limited_process import LimitedProcess  # noqa
 from securepy.restrictor import Restrictor  # noqa
-from securepy.security import get_globals  # noqa
+from securepy.security import get_safe_globals  # noqa
 from securepy.stdio import IOCage, MemoryOverflow, LimitedStringIO  # noqa
 from securepy.timing import IOTimedFunction, TimedFunction, TimedFunctionError  # noqa
 
