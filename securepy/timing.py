@@ -1,6 +1,7 @@
 import multiprocessing
 import multiprocessing.pool
 import typing as t
+import warnings
 from functools import wraps
 
 from securepy.stdio import IOCage, LimitedStringIO
@@ -189,7 +190,7 @@ class IOTimedFunction(TimedFunction):
     def __init__(self, time_limit: int, io_cage: IOCage):
         super().__init__(time_limit)
         self.io_cage = io_cage
-        raise DeprecationWarning("This class is deprecated, it might cause issues with multiprocessing.")
+        warnings.warn("This class is deprecated, it might cause issues with multiprocessing.")
 
     def _capture_return(self, func: t.Callable, *args, **kwargs) -> t.Tuple[t.Literal["exc", "ret"], t.Any, LimitedStringIO, LimitedStringIO]:
         """
