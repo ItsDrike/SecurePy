@@ -1,6 +1,4 @@
-import subprocess
 import sys
-import time
 import typing as t
 from functools import wraps
 from io import StringIO
@@ -217,43 +215,3 @@ class IOCage:
 
     def __repr__(self) -> str:
         return f"<IOCage(stdout={self.stdout}, stderr={self.stderr})"
-
-
-def read_process_output(
-    process: subprocess.Popen,
-    read_chunk_size: int = 1_000,
-    max_size: t.Optional[int] = None,
-    max_exec_time: t.Optional[t.Union[float, int]] = None
-) -> str:
-    """
-    Start reading from STDOUT of given `process`, return the obtained STDOUT as str.
-
-    In case `max_size` is specified, process will be terminated with SIGKILL if the obtained
-    output from STDOUT will get over specified `max_size` limit (in bytes).
-
-    In case `max_exec_time` is specified, process will be terminated with SIGKILL if the
-    given process will run over that specified time (in seconds).
-    """
-    output_size = 0
-    stdout = []
-    if max_exec_time is not None:
-        endtime = time.monotonic() + max_exec_time
-    else:
-        endtime = None
-
-    while process.poll() is None:
-        stdout_chars = process.stdout.read(read_chunk_size)
-        output_size += sys.getsizeof(stdout_chars)
-        stdout.append(stdout_chars)
-
-        if max_size is not None and output_size > max_size:
-            process.kill()
-            raise MemoryOverflow("Terminated subprocess.Popen with SIGKILL", output_size, max_size)
-
-        if endtime is not None and time.monotonic() > endtime:
-            process.kill()
-            raise TimeoutError(f"Terminated subprocess.Popen with SIGKILL (surpassed maximum time for execution: {max_exec_time})")
-
-    # Wait for process termination
-    process.wait()
-    return "".join(stdout)
