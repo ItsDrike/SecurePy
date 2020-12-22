@@ -1,5 +1,6 @@
 import builtins
 import typing as t
+from copy import deepcopy
 
 
 class ProtectionBreach(RuntimeError):
@@ -83,13 +84,13 @@ OVERRIDDEN_VALUES = {
 BASE_GLOBALS = {"__builtins__": {}}
 UNRESTRICTED_GLOBALS = {"__builtins__": builtins}
 
-SAFE_GLOBALS = BASE_GLOBALS.copy()
+SAFE_GLOBALS = deepcopy(BASE_GLOBALS)
 for name in SAFE_BUILTINS:
     SAFE_GLOBALS["__builtins__"][name] = getattr(builtins, name)
 for name, reference in OVERRIDDEN_VALUES.items():
     SAFE_GLOBALS["__builtins__"][name] = reference
 
-RESTRICTED_GLOBALS = BASE_GLOBALS.copy()
+RESTRICTED_GLOBALS = deepcopy(BASE_GLOBALS)
 for builtin, reference in vars(builtins).items():
     if builtin not in UNSAFE_BUILTINS:
         RESTRICTED_GLOBALS["__builtins__"][builtin] = reference
