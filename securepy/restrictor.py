@@ -9,14 +9,14 @@ class Restrictor:
     def __init__(
         self,
         restriction_scope: t.Literal[1, 2, 3] = 2,
-        max_exec_time: t.Optional[t.Union[float, int]] = None,  # (seconds)
-        max_process_memory: t.Optional[int] = 5 * 1024 * 1024,  # 10 MB
-        max_output_memory: t.Optional[int] = 100_000,  # 100kB
+        time_limit: t.Optional[t.Union[float, int]] = None,  # seconds
+        max_process_memory: t.Optional[int] = 5 * 1024 * 1024,  # 5 MB
+        max_output_memory: t.Optional[int] = 1_000_000,  # 1MB
         output_chunk_read_size: int = 1_000,  # characters (bytes)
         python_path: str = "python"  # default to `python` in PATH
     ):
         """
-        `max_exec_time` is the maximum time limit in seconds for which exec function
+        `time_limit` is the maximum time limit in seconds for which exec function
         will be allowed to run. After this timelimit ends, exec will be terminated
         and `TimeoutError` will be raised.
 
@@ -42,7 +42,7 @@ class Restrictor:
         `python_path` is the path to python interpreter file which will be called to run the
         specified code.
         """
-        self.max_exec_time = max_exec_time
+        self.time_limit = time_limit
         self.restriction_scope = restriction_scope
         self.max_process_memory = max_process_memory if max_process_memory is not None else -1
         self.max_output_memory = max_output_memory
@@ -65,8 +65,8 @@ class Restrictor:
         )
 
         try:
-            # out = read_process_output(process, self.output_chunk_read_size, self.max_output_memory, self.max_exec_time)
-            stdout, stderr = process.communicate(timeout=self.max_exec_time)
+            # out = read_process_output(process, self.output_chunk_read_size, self.max_output_memory, self.time_limit)
+            stdout, stderr = process.communicate(timeout=self.time_limit)
         except MemoryOverflow as e:
             return subprocess.CompletedProcess(args, returncode=-1, stdout=None, stderr=str(e))
         except subprocess.TimeoutExpired as e:

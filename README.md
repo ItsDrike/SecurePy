@@ -25,11 +25,11 @@ In order to use this library, you must first download it from PyPi: `pip install
 import securepy
 
 restrictor = securepy.Restrictor(
-    max_exec_time=3,
-    restriction_scope=2,
-    max_process_memory=5_000_000,  # 5 MB
-    max_output_memory=100_000,  # characters (byres): 100kB
-    output_chunk_read_size=10_000,  # characters (bytes): 10kB
+    time_limit=3,  # seconds
+    restriction_scope=2,  # secure global scope
+    max_process_memory=5 * 1024 * 1024,  # 5 MB
+    max_output_memory=1_000_000,  # characters (byres): 1MB
+    output_chunk_read_size=1_000,  # characters (bytes): 1kB
     python_path="python"  # default `python` command in PATH
 )
 stdout, exc = restrictor.execute("""
@@ -37,7 +37,7 @@ stdout, exc = restrictor.execute("""
 """)
 ```
 
-- `max_exec_time` parameter is a way to specify the maximum amount of seconds the code will be allowed to run for until interruption. (required - int/float)
+- `time_limit` parameter is a way to specify the maximum amount of seconds the code will be allowed to run for until interruption. (required - int/float)
 - `restriction_scope` parameter is a way to specify how restricted the code should be. These are the currently available scopes:
   - **0**: No restriction (regular exec)
   - **1**: Restricted globals (removed some unsafe globals)
