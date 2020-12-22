@@ -98,12 +98,12 @@ for builtin, reference in vars(builtins).items():
 
 def get_globals(restriction_level: int) -> dict:
     if restriction_level == 0:
-        return UNRESTRICTED_GLOBALS
+        return deepcopy(UNRESTRICTED_GLOBALS)
     elif restriction_level == 1:
-        return RESTRICTED_GLOBALS
+        return deepcopy(RESTRICTED_GLOBALS)
     elif restriction_level == 2:
-        return SAFE_GLOBALS
+        return deepcopy(SAFE_GLOBALS)
     elif restriction_level == 3:
-        return BASE_GLOBALS
+        return deepcopy(BASE_GLOBALS)
     else:
         raise RuntimeError(f"Invalid `restriction_level` ({restriction_level}), valid values: 0-3.")
