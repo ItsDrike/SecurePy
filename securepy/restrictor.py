@@ -1,7 +1,8 @@
 import subprocess
 import typing as t
 
-from securepy.stdio import read_process_output
+from securepy.limited_process import LimitedProcess
+from securepy.stdio import MemoryOverflow
 
 
 class Restrictor:
@@ -48,22 +49,27 @@ class Restrictor:
         self.output_chunk_read_size = output_chunk_read_size
         self.python_path = python_path
 
-    def execute(self, code: str) -> str:
-        process = subprocess.Popen(
-            [
-                self.python_path, "securepy/executor.py",
-                str(self.restriction_scope), code
-            ],
+    def execute(self, code: str) -> subprocess.CompletedProcess:
+        args = [
+            self.python_path, "securepy/executor.py",
+            str(self.restriction_scope), code
+        ]
+
+        process = LimitedProcess(
+            args,
+            max_output_size=self.max_output_memory,
+            read_chunk_size=self.output_chunk_read_size,
             stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
+            stderr=subprocess.PIPE,
             text=True
         )
 
-        out = read_process_output(
-            process,
-            self.output_chunk_read_size,
-            self.max_output_memory,
-            self.max_exec_time
-        )
+        try:
+            # out = read_process_output(process, self.output_chunk_read_size, self.max_output_memory, self.max_exec_time)
+            stdout, stderr = process.communicate(timeout=self.max_exec_time)
+        except MemoryOverflow as e:
+            return subprocess.CompletedProcess(args, returncode=-1, stdout=None, stderr=str(e))
+        except subprocess.TimeoutExpired as e:
+            return subprocess.CompletedProcess(args, returncode=-1, stdout=None, stderr=str(e))
 
-        return out
+        return subprocess.CompletedProcess(args, returncode=1, stdout=stdout, stderr=stderr)
