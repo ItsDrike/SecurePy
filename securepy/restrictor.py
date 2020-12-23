@@ -1,3 +1,4 @@
+import os
 import subprocess
 import typing as t
 
@@ -48,10 +49,11 @@ class Restrictor:
         self.max_output_memory = max_output_memory
         self.output_chunk_read_size = output_chunk_read_size
         self.python_path = python_path
+        self.executable_path = os.path.dirname(os.path.realpath(__file__)) + "/executor.py"
 
     def execute(self, code: str) -> subprocess.CompletedProcess:
         args = [
-            self.python_path, "securepy/executor.py",
+            self.python_path, self.executable_path,
             str(self.restriction_scope), str(self.max_process_memory), code
         ]
 
