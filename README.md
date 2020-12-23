@@ -27,9 +27,9 @@ import securepy
 restrictor = securepy.Restrictor(
     time_limit=3,  # seconds
     restriction_scope=2,  # secure global scope
-    max_process_memory=5 * 1024 * 1024,  # 5 MB
-    max_output_memory=1_000_000,  # characters (byres): 1MB
-    output_chunk_read_size=1_000,  # characters (bytes): 1kB
+    max_process_memory=20 * 1024 * 1024,  # 20 MB
+    max_output_memory=10_000,  # 10,000 characters (bytes) maximum
+    output_chunk_read_size=1_000,  # characters (bytes)
     python_path="python"  # default `python` command in PATH
 )
 stdout, exc = restrictor.execute("""
@@ -43,9 +43,9 @@ stdout, exc = restrictor.execute("""
   - **1**: Restricted globals (removed some unsafe globals)
   - **2** (RECOMMENDED, default): Secure globals (only using relatively safe globals)
   - **3**: No globals (very limiting but quite safe)
-- `max_process_memory` is the maximum amount of RAM available to given process (default: 5MB)
-- `max_output_memory` is the maximum amount of memory allowed for STDOUT/STDERR outputs (default: 100kB)
-- `output_chunk_read_size` is the memory amount of a single chunk of stdout/stderr buffer to be read. (this buffer will keep being read until there's no more characters left or it gets bigger than specified `max_output_memory`) (default: 10kB)
+- `max_process_memory` is the maximum amount of RAM available to given process (default: 20MB)
+- `max_output_memory` is the maximum amount of memory allowed for STDOUT/STDERR outputs (default: 10,000 characters)
+- `output_chunk_read_size` is the memory amount of a single chunk of stdout/stderr buffer to be read. (this buffer will keep being read until there's no more characters left or it gets bigger than specified `max_output_memory`) (default: 1,000 characters)
 - `python_path` is the path to python executable used to run given code. This gives you the ability to use different non-default python versions. (default `python` as defined in PATH).
 
 ### Sandbox (NsJail)

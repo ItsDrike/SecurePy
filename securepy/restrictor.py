@@ -11,8 +11,8 @@ class Restrictor:
         self,
         restriction_scope: t.Literal[1, 2, 3] = 2,
         time_limit: t.Optional[t.Union[float, int]] = None,  # seconds
-        max_process_memory: t.Optional[int] = 5 * 1024 * 1024,  # 5 MB
-        max_output_memory: t.Optional[int] = 1_000_000,  # 1MB
+        max_process_memory: t.Optional[int] = 20 * 1024 * 1024,  # 10 MB
+        max_output_memory: t.Optional[int] = 10_000,  # 10,000 characters (bytes) maximum
         output_chunk_read_size: int = 1_000,  # characters (bytes)
         python_path: str = "python"  # default to `python` in PATH
     ):
