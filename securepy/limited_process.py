@@ -133,8 +133,8 @@ class LimitedProcess(subprocess.Popen):
 
         # All data exchanged.  Translate lists into strings.
         if stdout is not None:
-            stdout = stdout[0]
+            stdout = "".join(stdout)
         if stderr is not None:
-            stderr = stderr[0]
+            stderr = "".join(stderr)
 
         return (stdout, stderr)
