@@ -96,6 +96,49 @@ for builtin, reference in vars(builtins).items():
         RESTRICTED_GLOBALS["__builtins__"][builtin] = reference
 
 
+def _mutable_copy(x: t.Any) -> t.Any:
+    if isinstance(x, (dict, list, set, tuple)):
+        return full_copy(x)
+    return x
+
+
+def full_copy(x: t.Any) -> t.Any:
+    """
+    Replicate `deepcopy` behavior, but in case `TypeError`
+    is raised (usually due to pickling error for module),
+    go through the mutable datatypes pairs manually.
+    """
+    try:
+        return deepcopy(x)
+    except TypeError as e:
+        if isinstance(x, dict):
+            new_dct = {}
+            for key, value in x.items():
+                value = _mutable_copy(value)
+                new_dct[key] = value
+            return new_dct
+        elif isinstance(x, list):
+            new_lst = []
+            for element in x:
+                element = _mutable_copy(element)
+                new_lst.append(element)
+                return new_lst
+        elif isinstance(x, set):
+            new_set = set()
+            for element in x:
+                element = _mutable_copy(element)
+                new_set.add(element)
+            return new_set
+        elif isinstance(x, tuple):
+            new_tuple = tuple()
+            for element in x:
+                element = _mutable_copy(element)
+                new_tuple += (element, )
+            return new_tuple
+        else:
+            raise e
+
+
 def get_safe_globals(restriction_level: int) -> dict:
     """
     Get secure globals based on given restriction level:
@@ -105,12 +148,12 @@ def get_safe_globals(restriction_level: int) -> dict:
     - 3: No globals (very limiting but quite safe)
     """
     if restriction_level == 0:
-        return deepcopy(UNRESTRICTED_GLOBALS)
+        return full_copy(UNRESTRICTED_GLOBALS)
     elif restriction_level == 1:
-        return deepcopy(RESTRICTED_GLOBALS)
+        return full_copy(RESTRICTED_GLOBALS)
     elif restriction_level == 2:
-        return deepcopy(SAFE_GLOBALS)
+        return full_copy(SAFE_GLOBALS)
     elif restriction_level == 3:
-        return deepcopy(BASE_GLOBALS)
+        return full_copy(BASE_GLOBALS)
     else:
         raise RuntimeError(f"Invalid `restriction_level` ({restriction_level}), valid values: 0-3.")
