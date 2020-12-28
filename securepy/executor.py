@@ -16,7 +16,7 @@ but will instead only use `import module`.
 import sys
 import warnings
 
-from security import get_safe_globals
+from security import get_safe_globals  # type: ignore (Pylance can't recognize this import as it's using different workdir)
 
 
 def mem_limit(max_virtual_memory: int) -> None:

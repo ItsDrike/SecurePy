@@ -58,7 +58,7 @@ class Restrictor:
         ]
 
         process = LimitedProcess(
-            args,
+            args=args,  # type: ignore (Pylance can't resolve args properly)
             max_output_size=self.max_output_memory,
             read_chunk_size=self.output_chunk_read_size,
             stdout=subprocess.PIPE,

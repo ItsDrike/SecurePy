@@ -20,14 +20,14 @@ class ExcThread(threading.Thread):
         as `self.exc`
         """
         try:
-            if self._target:
-                self._target(*self._args, **self._kwargs)
+            if self._target:  # type: ignore (Pylance doesn't recognize this variable)
+                self._target(*self._args, **self._kwargs)  # type: ignore (Pylance doesn't recognize these variables)
         except BaseException as e:
             self.exc = e
         finally:
             # Avoid a refcycle if the thread is running a function with
             # an argument that has a member that points to the thread.
-            del self._target, self._args, self._kwargs
+            del self._target, self._args, self._kwargs  # type: ignore (Pylance doesn't recognize these variables)
 
     def join(self, timeout: t.Optional[float]) -> None:
         """
@@ -53,7 +53,7 @@ class LimitedProcess(subprocess.Popen):
         read_chunk_size: int,
         **kwargs
     ) -> None:
-        super().__init__(args, **kwargs)
+        super().__init__(args, **kwargs)  # type: ignore (Pylance can't resolve Popen.__init__ properly)
 
         self.read_chunk_size = read_chunk_size
         self.max_output_size = max_output_size
@@ -104,17 +104,17 @@ class LimitedProcess(subprocess.Popen):
             self.stderr_thread.start()
 
         if self.stdin:
-            self._stdin_write(input)
+            self._stdin_write(input)  # type: ignore (Pylance doesn't recognize this variable)
 
         # Wait for the reader threads, or time out. If we time out, the
         # threads remain reading and the fds left open in case the user
         # calls communicate again.
         if self.stdout is not None:
-            self.stdout_thread.join(self._remaining_time(endtime))
+            self.stdout_thread.join(self._remaining_time(endtime))  # type: ignore (Pylance doesn't recognize this function)
             if self.stdout_thread.is_alive():
                 raise subprocess.TimeoutExpired(self.args, orig_timeout)
         if self.stderr is not None:
-            self.stderr_thread.join(self._remaining_time(endtime))
+            self.stderr_thread.join(self._remaining_time(endtime))  # type: ignore (Pylance doesn't recognize this function)
             if self.stderr_thread.is_alive():
                 raise subprocess.TimeoutExpired(self.args, orig_timeout)
 
