@@ -134,13 +134,13 @@ jobs:
       - name: Install dependencies with pipenv
         if: steps.python_cache.outputs.cache-hit != 'true'
         run: |
-          pip install pipenv
-          pipenv install --dev --deploy --system
+          python -m pip install pipenv
+          python -m pipenv install --dev --deploy --system
 
       - name: Run unit-tests and generate coverage report
         run: |
-          pipenv run test
-          pipenv run report -m
+          python -m pipenv run test
+          python -m pipenv run report -m
 
       # This will publish the coverage report,
       # and print a "job" link in the output of this action
