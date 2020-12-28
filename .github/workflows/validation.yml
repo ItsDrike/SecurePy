@@ -24,7 +24,7 @@ env:
 
 jobs:
   lint:
-    name: Lint & Type check
+    name: Lint & Type
     runs-on: ubuntu-latest
 
     steps:
@@ -97,7 +97,7 @@ jobs:
         run: pipenv run pyright
 
   test:
-    name: Unit-Tests check
+    name: Unit-Test
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
