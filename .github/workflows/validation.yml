@@ -94,12 +94,10 @@ jobs:
       - name: Run pyright type checking
         run: pipenv run pyright
 
-      # `coverage` is ran using python command to suppress
-      # irrelevant warning (-Wignore)
       - name: Run unit-tests and generate coverage report
         run: |
-          python -Wignore -m coverage run -m unittest
-          coverage run report -m
+          pipenv run test
+          pipenv run report -m
 
       # This will publish the coverage report,
       # and print a "job" link in the output of this action
