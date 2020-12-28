@@ -1,5 +1,5 @@
 [run]
 branch = true
 source =
-    bot
+    securepy
     tests
