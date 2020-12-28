@@ -38,6 +38,12 @@ jobs:
         with:
           python-version: '3.8'
 
+      # Pyright requires node.js for installation
+      - name: Setup Node.js (for pyright)
+        uses: actions/setup-node@v1
+        with:
+          node-version: "12"
+
       # Cache python dependencies
       # the key is a composite of multiple values which
       # when changed, the cache won't be restored
@@ -56,6 +62,10 @@ jobs:
         run: |
           pip install pipenv
           pipenv install --dev --deploy --system
+
+      - name: Install pyright with npm
+        run: npm install -g pyright
+
       # Cache pre-commit environment
       # the key consists relevant factors to allow
       # updating, when pre-commit changes
@@ -80,6 +90,9 @@ jobs:
         run: "flake8 \
         --format='::error file=%(path)s,line=%(row)d,col=%(col)d::\
         [flake8] %(code)s: %(text)s'"
+
+      - name: Run pyright type checking
+        run: pipenv run pyright
 
       - name: Run unit-tests
         run: python -m unittest
