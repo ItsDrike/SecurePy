@@ -94,5 +94,14 @@ jobs:
       - name: Run pyright type checking
         run: pipenv run pyright
 
-      - name: Run unit-tests
-        run: python -m unittest
+      - name: Run unit-tests and generate coverage report
+        run: |
+          pipenv run test
+          pipenv run report -m
+
+      # This will publish the coverage report,
+      # and print a "job" link in the output of this action
+      - name: Publish coverage report to coveralls.io
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: coveralls

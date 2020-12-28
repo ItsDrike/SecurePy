@@ -5,6 +5,7 @@ verify_ssl = true
 
 [dev-packages]
 autopep8 = "*"
+coverage = "*"
 flake8 = "*"
 flake8-bugbear = "*"
 flake8-import-order = "*"
@@ -12,6 +13,7 @@ ipython = "*"
 pre-commit = "*"
 twine = "*"
 "keyrings.alt" = "*"
+coveralls = "*"
 
 [packages]
 
@@ -21,7 +23,8 @@ python_version = "3.8"
 [scripts]
 precommit = "pre-commit install"
 lint = "pre-commit run --all-files"
-test = "python -m unittest"
+test = "coverage run -m unittest"
+report = "coverage report"
 build = "python setup.py sdist bdist_wheel"
 build-check = "twine check dist/*"
 publish-test = "twine upload --repository-url https://test.pypi.org/legacy/ dist/*"
