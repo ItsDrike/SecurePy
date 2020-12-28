@@ -1,4 +1,3 @@
-import subprocess
 import sys
 import typing as t
 from functools import wraps
@@ -6,11 +5,22 @@ from io import StringIO
 
 
 class MemoryOverflow(Exception):
-    def __init__(self, used_memory: int, max_memory: int, message: t.Optional[str] = None, *args, **kwargs) -> None:
+    def __init__(
+        self,
+        message: t.Optional[str] = None,
+        used_memory: t.Optional[int] = None,
+        max_memory: t.Optional[int] = None,
+        *args, **kwargs
+    ) -> None:
+        if not message:
+            message = "Maximum STDOUT/STDERR memory surpassed"
+        if used_memory is not None and max_memory is not None:
+            message += f"({used_memory} > {max_memory})"
+
         self.used_memory = used_memory
         self.max_memory = max_memory
-        if not message:
-            message = f"Maximum STDOUT/STDERR memory surpassed ({used_memory} > {max_memory})"
+        self.message = message
+
         super().__init__(message, *args, **kwargs)
 
 
@@ -26,7 +36,7 @@ class LimitedStringIO(StringIO):
         if used_memory <= self.max_memory:
             return super().write(__s)
         else:
-            raise MemoryOverflow(used_memory, self.max_memory)
+            raise MemoryOverflow(used_memory=used_memory, max_memory=self.max_memory)
 
     def __repr__(self) -> str:
         return f"<LimitedStringIO max_memory={self.max_memory}, value={self.getvalue()}>"
@@ -38,7 +48,7 @@ class IOCage:
     to given function it can work as a wrapper, decorator or context manager.
 
     Context Manager:
-        captured_std = IOCage(stdin='bye')  # `stdin` as a param to init. If not specified, `sys.stdin` will not be overrided
+        captured_std = IOCage(stdin='bye')  # `stdin` as a param to init. If not specified, STDIN won't be simulated.
         with captured_std:
             print("hello")
             print(input())  # Will print 'bye' to stdout
@@ -50,7 +60,7 @@ class IOCage:
             print("hello")
 
         captured_std = IOCage()
-        captured_std.capture(foo, args=None, kwargs=None)  # Can pass `stdin` or it will default to value from init
+        captured_std.capture(foo, args=None, kwargs=None)
 
         captured_std.stdout  # <-- will contain the captured STDOUT (str)
 
@@ -84,13 +94,12 @@ class IOCage:
         self.auto_reset = auto_reset
         self.memory_limit = memory_limit
 
-        self.stdin = stdin
-
         self.enable_stdout = enable_stdout
         self.enable_stderr = enable_stderr
 
         self.stdout_funnel = LimitedStringIO(self.memory_limit)
         self.stderr_funnel = LimitedStringIO(self.memory_limit)
+        self.stdin_funnel = StringIO(stdin) if stdin else None
 
         self.old_stdout = sys.stdout
         self.old_stderr = sys.stderr
@@ -111,6 +120,10 @@ class IOCage:
         return empty string in case no STDERR was captured.
         """
         return self.stderr_funnel.getvalue()
+
+    def set_stdin(self, stdin: t.Optional[str]) -> None:
+        """Set new STDIN string to be used."""
+        self.stdin_funnel = StringIO(stdin) if stdin else None
 
     def __enter__(self) -> None:
         """
@@ -148,7 +161,7 @@ class IOCage:
             return self.capture(func, args, kwargs)
         return inner
 
-    def capture(self, func: t.Callable, args=None, kwargs=None, stdin: t.Optional[str] = None) -> t.Any:
+    def capture(self, func: t.Callable, args=None, kwargs=None) -> t.Any:
         """
         This runs given `func` while capturing it's STDOUT/STDERR
         and simulating it's STDIN.
@@ -160,22 +173,16 @@ class IOCage:
         This acts as a wrapper for given `func`, it immediately runs it,
         (if you want to decorate, call instance directly - `__call__`)
         """
-        old_stdin = self.stdin
-
         if args is None:
             args = tuple()
         if kwargs is None:
             kwargs = dict()
-        if stdin is not None:
-            self.stdin = stdin
 
         if self.auto_reset:
             self.reset()
 
         with self:
             return func(*args, **kwargs)
-
-        self.stdin = old_stdin
 
     def override_std(self) -> None:
         """
@@ -186,8 +193,8 @@ class IOCage:
             sys.stdout = self.stdout_funnel
         if not isinstance(sys.stderr, StringIO) and self.enable_stderr:
             sys.stderr = self.stderr_funnel
-        if not isinstance(sys.stdin, StringIO) and self.stdin:
-            sys.stdin = StringIO(self.stdin)
+        if not isinstance(sys.stdin, StringIO) and self.stdin_funnel is not None:
+            sys.stdin = self.stdin_funnel
 
     def restore_std(self) -> None:
         """
@@ -208,36 +215,3 @@ class IOCage:
 
     def __repr__(self) -> str:
         return f"<IOCage(stdout={self.stdout}, stderr={self.stderr})"
-
-
-def read_process_std(
-    process: subprocess.Popen,
-    read_chunk_size: int,
-    max_size: int,
-) -> t.Tuple[str, str]:
-    """
-    Start reading from STDOUT and STDERR, stop in case stdout limit is reached or process stops.
-
-    In case output from STDOUT will reach the max limit, the subprocess will be terminated by SIGKILL.
-    """
-    output_size = 0
-    stdout = []
-    stderr = []
-
-    while process.poll() is None:
-        chars = process.stdout.read(read_chunk_size)
-        output_size += sys.getsizeof(chars)
-        stdout.append(chars)
-
-        chars = process.stderr.read(read_chunk_size)
-        output_size += sys.getsizeof(chars)
-        stderr.append(chars)
-
-        if output_size > max_size:
-            print("Output exceeded stdout limit, terminating NsJail with SIGKILL")
-            process.kill()
-            break
-
-    # Wait for process termination
-    process.wait()
-    return "".join(stdout), "".join(stderr)

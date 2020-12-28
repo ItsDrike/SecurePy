@@ -1,87 +1,77 @@
-import traceback
+import os
+import subprocess
 import typing as t
 
-from securepy.security import RESTRICTED_GLOBALS, SAFE_GLOBALS
-from securepy.stdio import IOCage
-from securepy.timing import CapturingTimedFunction
+from securepy.limited_process import LimitedProcess
+from securepy.stdio import MemoryOverflow
 
 
 class Restrictor:
-    """
-    Prepare isolated python exec session
-    """
     def __init__(
         self,
-        max_exec_time: int = 3,
-        max_std_memory: int = 100_000,
         restriction_scope: t.Literal[1, 2, 3] = 2,
-        stdin: t.Optional[str] = None,
-        enable_stdout: bool = True,
-        enable_stderr: bool = True,
+        time_limit: t.Optional[t.Union[float, int]] = None,  # seconds
+        max_process_memory: t.Optional[int] = 20 * 1024 * 1024,  # 10 MB
+        max_output_memory: t.Optional[int] = 10_000,  # 10,000 characters (bytes) maximum
+        output_chunk_read_size: int = 1_000,  # characters (bytes)
+        python_path: str = "python"  # default to `python` in PATH
     ):
         """
-        `restriction_level` will determine how restricted will the
+        `time_limit` is the maximum time limit in seconds for which exec function
+        will be allowed to run. After this timelimit ends, exec will be terminated
+        and `TimeoutError` will be raised.
+
+        `restriction_scope` will determine how restricted will the
         python code execution be. Restriction levels are as follows:
         - 0: Unrestricted globals (full builtins as they are in this file)
         - 1: Restricted globals (removed some unsafe builtins)
         - 2 (RECOMMENDED): Secure globals (only using relatively safe builtins)
         - 3: No globals (very limiting but quite safe)
-        `max_exec_time` is the maximum time limit in seconds for which exec function
-        will be allowed to run. After this timelimit ends, exec will be terminated
-        and `TimeoutError` will be raised.
+
+        `max_process_memory` is the total amount of allowed RAM memory single exec process
+        canuse. Exceeding this will raise `MemoryOverflow`. In case it's `None`, process
+        will run without RAM limitation.
+
+        `max_output_memory` is the maximum allowed memory for STDOUT/STDERR of the process.
+        Exceeding this amount will raise `MemoryOverflow`. In case it's `None`, process
+        will run without STDOUT/STDERR memory limitation.
+
+        `std_chunk_read_size` is the size (amount of characters) in bytes which will be used
+        to read the single output chunk from given process, which will then be added to rest of
+        the STDOUT/STDERR.
+
+        `python_path` is the path to python interpreter file which will be called to run the
+        specified code.
         """
-        self.max_exec_time = max_exec_time
+        self.time_limit = time_limit
         self.restriction_scope = restriction_scope
-        self._set_global_scope(self.restriction_scope)
+        self.max_process_memory = max_process_memory if max_process_memory is not None else -1
+        self.max_output_memory = max_output_memory
+        self.output_chunk_read_size = output_chunk_read_size
+        self.python_path = python_path
+        self.executable_path = os.path.dirname(os.path.realpath(__file__)) + "/executor.py"
 
-        self.IOCage = IOCage(
-            stdin=stdin,
-            enable_stdout=enable_stdout,
-            enable_stderr=enable_stderr,
+    def execute(self, code: str) -> subprocess.CompletedProcess:
+        args = [
+            self.python_path, self.executable_path,
+            str(self.restriction_scope), str(self.max_process_memory), code
+        ]
+
+        process = LimitedProcess(
+            args=args,  # type: ignore (Pylance can't resolve args properly)
+            max_output_size=self.max_output_memory,
+            read_chunk_size=self.output_chunk_read_size,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
         )
-        self.timed_exec = CapturingTimedFunction(self.max_exec_time, self.IOCage)
 
-    def _set_global_scope(self, restriction_scope: t.Literal[1, 2, 3]):
-        """
-        Override builtins in global scope based on given restriction_scope.
-        Restriction levels are as follows:
-        - 0: Unrestricted globals (full builtins as they are in this file)
-        - 1: Restricted globals (removed some unsafe builtins)
-        - 2 (RECOMMENDED): Secure globals (only using relatively safe builtins)
-        - 3: No globals (very limiting but quite safe)
-        - 3: No globals (very limiting but quite safe)
-        """
-        if restriction_scope == 0:
-            self.globals = {"__builtins__": globals()["__builtins__"]}
-        elif restriction_scope == 1:
-            self.globals = RESTRICTED_GLOBALS
-        elif restriction_scope == 2:
-            self.globals = SAFE_GLOBALS
-        elif restriction_scope == 3:
-            self.globals = {"__builtins__": {}}
-        else:
-            raise TypeError("`restriction_scope` must be a literal value: 0, 1, 2 or 3.")
-
-    def execute(self, code: str) -> t.Tuple[t.Optional[str], t.Optional[BaseException]]:
-        """
-        Securely execute given `code` securely with specified time-limit
-        and using chosen globals (in __init__). Any stdout coming out from
-        this program will get captured and returned, in case an error occurs
-        it will be returned as second element of the return tuple.
-
-        Return: (`stdout`, `raised exception`)
-        """
-        exception = None
-
-        wrapped = self.timed_exec(lambda code, globals: exec(code, globals))
         try:
-            wrapped(code, self.globals)
-        except BaseException as exc:
-            exception = exc
-            caught_traceback = traceback.format_exc()
-            exception.traceback = caught_traceback
+            # out = read_process_output(process, self.output_chunk_read_size, self.max_output_memory, self.time_limit)
+            stdout, stderr = process.communicate(timeout=self.time_limit)
+        except MemoryOverflow as e:
+            return subprocess.CompletedProcess(args, returncode=-1, stdout=None, stderr=str(e))
+        except subprocess.TimeoutExpired as e:
+            return subprocess.CompletedProcess(args, returncode=-1, stdout=None, stderr=str(e))
 
-        stdout = self.IOCage.stdout
-        self.IOCage.reset()
-
-        return stdout, exception
+        return subprocess.CompletedProcess(args, returncode=1, stdout=stdout, stderr=stderr)
