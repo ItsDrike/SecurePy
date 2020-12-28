@@ -147,4 +147,4 @@ jobs:
       - name: Publish coverage report to coveralls.io
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python -m pipenv run python -m coveralls
+        run: python -m coveralls
