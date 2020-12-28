@@ -139,8 +139,8 @@ jobs:
 
       - name: Run unit-tests and generate coverage report
         run: |
-          python -m pipenv run test
-          python -m pipenv run report -m
+          python -m coverage run -m unittest
+          python -m coverage report -m
 
       # This will publish the coverage report,
       # and print a "job" link in the output of this action
