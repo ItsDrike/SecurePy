@@ -149,6 +149,7 @@ jobs:
         with:
           github-token: ${{ secrets.github_token }}
           flag-name: run-${{ runner.os }}
+          path-to-lcov: ./coverage
           parallel: true
 
   finish:
