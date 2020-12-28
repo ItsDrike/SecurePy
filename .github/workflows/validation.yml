@@ -24,6 +24,7 @@ env:
 
 jobs:
   lint:
+    name: Lint & Type check
     runs-on: ubuntu-latest
 
     steps:
@@ -96,6 +97,7 @@ jobs:
         run: pipenv run pyright
 
   test:
+    name: Unit-Tests check
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -142,9 +144,19 @@ jobs:
           python -m coverage run -m unittest
           python -m coverage report -m
 
-      # This will publish the coverage report,
-      # and print a "job" link in the output of this action
-      - name: Publish coverage report to coveralls.io
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python -m coveralls
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.github_token }}
+          flag-name: run-${{ runner.os }}
+          parallel: true
+
+  finish:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Coveralls Finished
+      uses: coverallsapp/github-action@master
+      with:
+        github-token: ${{ secrets.github_token }}
+        parallel-finished: true
