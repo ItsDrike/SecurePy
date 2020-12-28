@@ -157,12 +157,39 @@ jobs:
     name: Finish Coveralls
     needs: test
     runs-on: ubuntu-latest
-    container: python:3-slim
+
     steps:
-    - name: Finish publishing to coveralls.io
-      run: |
-        pip3 install --upgrade coveralls
-        coveralls --finish
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout repository
+        uses: actions/checkout@
+
+      - name: Python setup
+        id: python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      # Cache python dependencies
+      # the key is a composite of multiple values which
+      # when changed, the cache won't be restored
+      # in order to make updating possible
+      - name: Python Dependency Caching
+        uses: actions/cache@v2
+        id: python_cache
+        with:
+          path: ${{ env.PYTHONUSERBASE }}
+          key: "python-0-${{ runner.os }}-${{ env.PYTHONUSERBASE }}-\
+          ${{ steps.python.outputs.python-version }}-\
+          ${{ hashFiles('./Pipfile', './Pipfile.lock') }}"
+
+      # In case dependencies weren't restored, install them
+      - name: Install dependencies with pipenv
+        if: steps.python_cache.outputs.cache-hit != 'true'
+        run: |
+          python -m pip install pipenv
+          python -m pipenv install --dev --deploy --system
+
+      - name: Finish publishing to coveralls.io
+        run: python -m coveralls --finish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
