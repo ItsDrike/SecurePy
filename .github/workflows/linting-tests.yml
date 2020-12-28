@@ -92,7 +92,7 @@ jobs:
         [flake8] %(code)s: %(text)s'"
 
       - name: Run pyright type checking
-        run: pipenv run pyright --verbose --stats
+        run: pipenv run pyright
 
       - name: Run unit-tests
         run: python -m unittest
