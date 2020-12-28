@@ -38,7 +38,6 @@ jobs:
         with:
           python-version: '3.8'
 
-      # Pyright requires node.js for installation
       - name: Setup Node.js (for pyright)
         uses: actions/setup-node@v1
         with:
@@ -53,6 +52,7 @@ jobs:
       # in order to make updating possible
       - name: Python Dependency Caching
         uses: actions/cache@v2
+        id: python_cache
         with:
           path: ${{ env.PYTHONUSERBASE }}
           key: "python-0-${{ runner.os }}-${{ env.PYTHONUSERBASE }}-\
