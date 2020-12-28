@@ -13,6 +13,7 @@ ipython = "*"
 pre-commit = "*"
 twine = "*"
 "keyrings.alt" = "*"
+coveralls = "*"
 
 [packages]
 
@@ -24,7 +25,6 @@ precommit = "pre-commit install"
 lint = "pre-commit run --all-files"
 test = "coverage run -m unittest"
 report = "coverage report"
-
 build = "python setup.py sdist bdist_wheel"
 build-check = "twine check dist/*"
 publish-test = "twine upload --repository-url https://test.pypi.org/legacy/ dist/*"
