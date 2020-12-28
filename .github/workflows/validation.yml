@@ -38,12 +38,21 @@ jobs:
         with:
           python-version: '3.8'
 
+      - name: Setup Node.js (for pyright)
+        uses: actions/setup-node@v1
+        with:
+          node-version: "12"
+
+      - name: Install pyright with npm
+        run: npm install -g pyright
+
       # Cache python dependencies
       # the key is a composite of multiple values which
       # when changed, the cache won't be restored
       # in order to make updating possible
       - name: Python Dependency Caching
         uses: actions/cache@v2
+        id: python_cache
         with:
           path: ${{ env.PYTHONUSERBASE }}
           key: "python-0-${{ runner.os }}-${{ env.PYTHONUSERBASE }}-\
@@ -56,6 +65,7 @@ jobs:
         run: |
           pip install pipenv
           pipenv install --dev --deploy --system
+
       # Cache pre-commit environment
       # the key consists relevant factors to allow
       # updating, when pre-commit changes
@@ -81,5 +91,17 @@ jobs:
         --format='::error file=%(path)s,line=%(row)d,col=%(col)d::\
         [flake8] %(code)s: %(text)s'"
 
-      - name: Run unit-tests
-        run: python -m unittest
+      - name: Run pyright type checking
+        run: pipenv run pyright
+
+      - name: Run unit-tests and generate coverage report
+        run: |
+          pipenv run test
+          pipenv run report -m
+
+      # This will publish the coverage report,
+      # and print a "job" link in the output of this action
+      - name: Publish coverage report to coveralls.io
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: coveralls

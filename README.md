@@ -1,5 +1,10 @@
 # SecurePy
 
+[![made-with-python](https://img.shields.io/badge/Made%20with-Python%203.8-ffe900.svg?longCache=true&style=flat-square&colorB=00a1ff&logo=python&logoColor=88889e)](https://www.python.org/)
+[![LGPL](https://img.shields.io/badge/Licensed%20under-LGPL-red.svg?style=flat-square)](./LICENSE)
+![Linting & Tests](https://github.com/ItsDrike/SecurePy/workflows/Linting%20&%20Tests/badge.svg)
+[![Coverage Status](https://coveralls.io/repos/github/ItsDrike/SecurePy/badge.svg?branch=master)](https://coveralls.io/github/ItsDrike/SecurePy?branch=master)
+
 SecurePy is a project which aims to allow very secure unknown python code execution without worries.
 
 ## Functionality

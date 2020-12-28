@@ -34,3 +34,6 @@ build/
 
 # Ignore repl.it related files
 .replit
+
+# Ignore .coverage file
+.coverage
