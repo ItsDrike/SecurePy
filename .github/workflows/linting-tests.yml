@@ -44,6 +44,9 @@ jobs:
         with:
           node-version: "12"
 
+      - name: Install pyright with npm
+        run: npm install -g pyright
+
       # Cache python dependencies
       # the key is a composite of multiple values which
       # when changed, the cache won't be restored
@@ -62,9 +65,6 @@ jobs:
         run: |
           pip install pipenv
           pipenv install --dev --deploy --system
-
-      - name: Install pyright with npm
-        run: npm install -g pyright
 
       # Cache pre-commit environment
       # the key consists relevant factors to allow
