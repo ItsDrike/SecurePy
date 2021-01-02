@@ -1,39 +1,51 @@
-# Ignore python cache
+# Byte-compiled / optimized / DLL Files
 __pycache__/
+*.py[cod]
+*$py.class
 
-# virtualenv
-env/
-venv/
+# PyPi packaging files
+build/
+dist/
+eggs/
+.eggs/
+develop-eggs/
+*.egg-info/
+*.egg
+
+# Unit tests / Coverage reports / CI cache
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.cache
+
+# Virtual Envornments
 .venv
+venv/
+env/
+ENV/
 
-# Vscode settings
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Editor project settings
+## VSCode
 .vscode/
-
-# Ignore intellij Files (PyCharm)
-.idea
-
-# Ignore spyder Files
+## PyCharm intellij
+.idea/
+## repl.it
+.replit
+## Spyder
 .spyproject/
+.spyderproject/
 
-# Ignore ds store files
-.DS_STORE
+# Custom attributes for folders on Mac OS
+.DS_Store
 
 # Backup files
 *.bak
 
 # Personal TODO files
 TODO
-
-# Ignore compiled python files
-*.pyc
-
-# Ignore PyPi packaging files
-*.egg-info/
-dist/
-build/
-
-# Ignore repl.it related files
-.replit
-
-# Ignore .coverage file
-.coverage
