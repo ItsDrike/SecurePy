@@ -1,4 +1,10 @@
-# SecurePy
+# Deprecation Message
+
+This repository is deprecated and archived, it is technically impossible to take features away and replace them with secured ones to produce secure enough code. This will basicaly always result in problems, especially in a language like python. **Use this at your own risk!** But it is not advised at all to use this in any kind of production environment.
+
+This project was made mostly for education purposes, please don't use it as a real way to prevent insecure python code execution.
+
+# Former Readme
 
 [![made-with-python](https://img.shields.io/badge/Made%20with-Python%203.8-ffe900.svg?longCache=true&style=flat-square&colorB=00a1ff&logo=python&logoColor=88889e)](https://www.python.org/)
 [![LGPL](https://img.shields.io/badge/Licensed%20under-LGPL-red.svg?style=flat-square)](./LICENSE)
