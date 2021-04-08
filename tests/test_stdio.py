@@ -152,11 +152,48 @@ class IOCageTests(unittest.TestCase):
                 expected_stdout = expected_stdout + "\n" if not expected_stdout == "" else expected_stdout
                 self.assertEqual(capture.stdout, expected_stdout)
 
+    def test_stderr(self):
+        """Make sure IOCage is able to properly capture given warnings."""
+        test_cases = (
+            ("foo",),  # Single warning
+            ("python", "is", "cool"),  # Multiple warnings
+            (None, ),  # No warnings
+        )
+
+        for test_warns in test_cases:
+            with self.subTest(test_warns=test_warns):
+                capture = IOCage()
+
+                with capture:
+                    for test_warn in test_warns:
+                        if test_warn is not None:
+                            warnings.warn(test_warn)
+
+                for test_warn in test_warns:
+                    if test_warn is not None:
+                        self.assertIn(f"UserWarning: {test_warn}\n", capture.stderr)
+                    else:
+                        self.assertEqual(capture.stderr, "")
+
     def test_stdin(self):
         """Test IOCage capability of simulating STDIN."""
         _original_stdin = sys.stdin
         captured = IOCage(stdin="hello\nthere\n")
 
+        collected = []
+        with captured:
+            self.assertIsNot(sys.stdin, _original_stdin)
+            collected.append(input())
+            collected.append(input())
+
+        self.assertEqual(collected, ["hello", "there"])
+
+    def test_stdin_setter(self):
+        """Test IOCage capability of simulating STDIN."""
+        _original_stdin = sys.stdin
+        captured = IOCage()
+
+        captured.set_stdin("hello\nthere\n")
         collected = []
         with captured:
             self.assertIsNot(sys.stdin, _original_stdin)
@@ -228,6 +265,6 @@ class IOCageTests(unittest.TestCase):
                 warnings.warn("Test")
 
         self.assertEqual(internal.stderr, "")
-        self.assertIn('warnings.warn("Test")', external.stderr)
+        self.assertIn("UserWarning: Test\n", external.stderr)
 
     # endregion

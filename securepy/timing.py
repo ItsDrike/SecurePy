@@ -210,14 +210,11 @@ class IOTimedFunction(TimedFunction):
 
         return super()._value_return((ret_info[0], ret_info[1]), func)
 
-    def __call__(self, func: t.Callable) -> t.Callable:
+    def run_timed(self, func: t.Callable, args=None, kwargs=None) -> t.Any:
         """
-        Override the default contextmanager of sueper and
-        additionally decorate the function using `std_capture`
-        in order to capture STDOUT/STDERR of that given function.
+        Override the default implementation the `run_timed`
+        and use the given `io_cage` in order to capture
+        STDOUT/STDERR of given function.
         """
-        @wraps(func)
-        def inner(*args, **kwargs) -> None:
-            std_capturing_func = self.io_cage(func)
-            return self.run_timed(std_capturing_func, args, kwargs)
-        return inner
+        std_capturing_func = self.io_cage(func)
+        return super().run_timed(std_capturing_func, args=args, kwargs=kwargs)
